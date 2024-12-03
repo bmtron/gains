@@ -11,6 +11,7 @@ export default function Index() {
     >
       <Text>Edit app/index.tsx to edit this screen.</Text>
       <Text>Some new text, is this working?</Text>
+      <Text>Testing remote repo sync.</Text>
     </View>
   );
 }
