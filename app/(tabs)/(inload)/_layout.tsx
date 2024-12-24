@@ -7,7 +7,7 @@ export default function InloadingLayout() {
     return (
         <Stack
             screenOptions={{
-                headerStyle: { backgroundColor: theme.colors.background },
+                headerShown: false,
             }}
         >
             <Stack.Screen name='index' />
