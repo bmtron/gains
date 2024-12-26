@@ -116,7 +116,7 @@ const ExerciseInloader = () => {
         }
     }
     return (
-        <SafeAreaView
+        <View
             style={{
                 flex: 1,
                 backgroundColor: theme.colors.background,
@@ -148,7 +148,7 @@ const ExerciseInloader = () => {
                     hideDialog={hideErrorDialog}
                 />
             </Portal>
-        </SafeAreaView>
+        </View>
     );
 };
 
