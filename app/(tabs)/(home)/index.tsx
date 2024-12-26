@@ -18,7 +18,10 @@ export default function Index() {
             <Link href='/settings' style={{ color: theme.colors.laserBlue }}>
                 Settings
             </Link>
-            <Link href='../(inload)' style={{ color: theme.colors.laserBlue }}>
+            <Link
+                href='/(tabs)/(inload)'
+                style={{ color: theme.colors.laserBlue }}
+            >
                 Inload
             </Link>
         </View>

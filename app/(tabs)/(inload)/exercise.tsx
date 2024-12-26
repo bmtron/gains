@@ -1,4 +1,4 @@
-import ExerciseInloader from "@/components/inload/exerciseinloader";
+import ExerciseInloader from "@/components/inload/ExerciseInloader";
 
 export default function ExerciseInload() {
     return <ExerciseInloader />;

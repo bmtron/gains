@@ -22,6 +22,7 @@ const theme = {
         secondary: colorScheme.secondary,
         paperWhite: colorScheme.customWhite,
         laserBlue: colorScheme.tokyoLaserBlue,
+        buttonStandard: colorScheme.standardButtonBg,
     },
 };
 
