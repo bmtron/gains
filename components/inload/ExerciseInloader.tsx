@@ -19,8 +19,11 @@ import { CustomDialog } from "../global/CustomDialog";
 import { hide } from "expo-router/build/utils/splash";
 import getMuscleGroups from "@/data/functions/getMuscleGroups";
 import { Button } from "@/components/global/ThemedButton";
+import { store } from "@/state_store/store";
+import * as SQLite from "expo-sqlite";
 
 const ExerciseInloader = () => {
+    const globalStateDb = store.getState().sqliteDb;
     const theme = useAppTheme();
     const [muscleGroups, setMuscleGroups] = useState<MuscleGroup[]>();
     const [exerciseName, setExerciseName] = useState<string>("");
@@ -32,10 +35,22 @@ const ExerciseInloader = () => {
     const [dialogText, setDialogText] = useState<string>("");
     const [dialogTitle, setDialogTitle] = useState<string>("");
 
+    async function testLocalDb() {
+        const db = await SQLite.openDatabaseAsync("gains.db");
+        console.log(db);
+        const res = await db.getAllAsync("SELECT * FROM dummy;");
+
+        console.log(res);
+        console.log("did we get here?");
+    }
     useEffect(() => {
+        const dummySQLiteFetcher = async () => {
+            await testLocalDb();
+        };
         const muscleGroupFetcher = async () => {
             try {
                 const data = await getMuscleGroups();
+                console.log(data);
                 setMuscleGroups(data);
             } catch (err) {
                 setDialogTitle("Error Loading Muscle Groups");
@@ -44,8 +59,9 @@ const ExerciseInloader = () => {
                 );
             }
         };
-
-        muscleGroupFetcher();
+        console.log("FUCK");
+        //muscleGroupFetcher();
+        dummySQLiteFetcher();
     }, []);
 
     function clearDialogInfo() {

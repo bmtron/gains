@@ -1,15 +1,9 @@
 import { Stack } from "expo-router";
 import { PaperProvider, MD3DarkTheme } from "react-native-paper";
 import { Provider } from "react-redux";
-import store from "../state_store/store";
+import { store } from "../state_store/store";
 import colorScheme from "@/constants/colorscheme";
-import { MD2Colors } from "react-native-paper/lib/typescript/types";
-import {
-    SafeAreaView,
-    SafeAreaProvider,
-    SafeAreaInsetsContext,
-    useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 const baseTheme = MD3DarkTheme;
 
@@ -33,11 +27,13 @@ export const useAppTheme = () => theme;
 export default function RootLayout() {
     return (
         <SafeAreaProvider>
-            <PaperProvider theme={theme}>
-                <Stack screenOptions={{ headerShown: false }}>
-                    <Stack.Screen name='(tabs)' />
-                </Stack>
-            </PaperProvider>
+            <Provider store={store}>
+                <PaperProvider theme={theme}>
+                    <Stack screenOptions={{ headerShown: false }}>
+                        <Stack.Screen name='(tabs)' />
+                    </Stack>
+                </PaperProvider>
+            </Provider>
         </SafeAreaProvider>
     );
 }
