@@ -1,30 +1,24 @@
 import { useAppTheme } from "@/app/_layout";
-import { SafeAreaView, View } from "react-native";
-import {
-    Text,
-    TextInput,
-    Button as RNPButton,
-    Portal,
-    Dialog,
-    RadioButton,
-} from "react-native-paper";
+import { Platform, View } from "react-native";
+import { TextInput, Portal, RadioButton } from "react-native-paper";
 import CustomAppBar from "../global/CustomAppBar";
 import { useEffect, useState } from "react";
 import { postExercise } from "@/data/functions/postExercise";
 import { ExerciseDto } from "@/models/exerciseModels";
-import TestPing from "@/data/functions/ testPing";
-import useGetMuscleGroups from "@/data/functions/getMuscleGroups";
 import MuscleGroup from "@/models/muscleGroupModels";
 import { CustomDialog } from "../global/CustomDialog";
-import { hide } from "expo-router/build/utils/splash";
 import getMuscleGroups from "@/data/functions/getMuscleGroups";
 import { Button } from "@/components/global/ThemedButton";
-import { store } from "@/state_store/store";
-import * as SQLite from "expo-sqlite";
+import getAllItems from "@/data/functions/getAllItems";
+import PaddedView from "../global/PaddedView";
 
 const ExerciseInloader = () => {
-    const globalStateDb = store.getState().sqliteDb;
     const theme = useAppTheme();
+    const [SQLite, setSQLite] =
+        useState<
+            typeof import("/home/bmtron/projects/GainsProject/Gains/node_modules/expo-sqlite/build/index")
+        >();
+
     const [muscleGroups, setMuscleGroups] = useState<MuscleGroup[]>();
     const [exerciseName, setExerciseName] = useState<string>("");
     const [exerciseNotes, setExerciseNotes] = useState<string>("");
@@ -36,6 +30,9 @@ const ExerciseInloader = () => {
     const [dialogTitle, setDialogTitle] = useState<string>("");
 
     async function testLocalDb() {
+        if (SQLite === undefined) {
+            return;
+        }
         const db = await SQLite.openDatabaseAsync("gains.db");
         console.log(db);
         const res = await db.getAllAsync("SELECT * FROM dummy;");
@@ -44,12 +41,13 @@ const ExerciseInloader = () => {
         console.log("did we get here?");
     }
     useEffect(() => {
-        const dummySQLiteFetcher = async () => {
-            await testLocalDb();
+        const sqliteGetter = async () => {
+            const sqlRes = await import("expo-sqlite");
+            setSQLite(sqlRes.default);
         };
         const muscleGroupFetcher = async () => {
             try {
-                const data = await getMuscleGroups();
+                const data = await getAllItems<MuscleGroup[]>("/musclegroup");
                 console.log(data);
                 setMuscleGroups(data);
             } catch (err) {
@@ -59,8 +57,15 @@ const ExerciseInloader = () => {
                 );
             }
         };
-        console.log("FUCK");
-        //muscleGroupFetcher();
+
+        muscleGroupFetcher();
+
+        const dummySQLiteFetcher = async () => {
+            await testLocalDb();
+        };
+        if (Platform.OS !== "web") {
+            sqliteGetter();
+        }
         dummySQLiteFetcher();
     }, []);
 
@@ -139,31 +144,33 @@ const ExerciseInloader = () => {
             }}
         >
             <CustomAppBar title='Exercise Inloader' />
-            <TextInput
-                placeholder='Name'
-                value={exerciseName}
-                onChangeText={(text) => setExerciseName(text)}
-            />
-            <TextInput
-                placeholder='Notes'
-                value={exerciseNotes}
-                onChangeText={(text) => setExerciseNotes(text)}
-            />
-            {renderMuscleGroupList()}
-            <View style={{ flex: 1, alignItems: "center" }}>
-                <Button
-                    onPress={async () => await submit()}
-                    text={"Add Exercise"}
+            <PaddedView>
+                <TextInput
+                    placeholder='Name'
+                    value={exerciseName}
+                    onChangeText={(text) => setExerciseName(text)}
                 />
-            </View>
-            <Portal>
-                <CustomDialog
-                    title={dialogTitle}
-                    dialogText={dialogText}
-                    visible={isDialogVisible}
-                    hideDialog={hideErrorDialog}
+                <TextInput
+                    placeholder='Notes'
+                    value={exerciseNotes}
+                    onChangeText={(text) => setExerciseNotes(text)}
                 />
-            </Portal>
+                {renderMuscleGroupList()}
+                <View style={{ flex: 1, alignItems: "center" }}>
+                    <Button
+                        onPress={async () => await submit()}
+                        text={"Add Exercise"}
+                    />
+                </View>
+                <Portal>
+                    <CustomDialog
+                        title={dialogTitle}
+                        dialogText={dialogText}
+                        visible={isDialogVisible}
+                        hideDialog={hideErrorDialog}
+                    />
+                </Portal>
+            </PaddedView>
         </View>
     );
 };

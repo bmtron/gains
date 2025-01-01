@@ -29,7 +29,13 @@ export default function RootLayout() {
         <SafeAreaProvider>
             <Provider store={store}>
                 <PaperProvider theme={theme}>
-                    <Stack screenOptions={{ headerShown: false }}>
+                    <Stack
+                        screenOptions={{
+                            headerShown: false,
+
+                            statusBarBackgroundColor: theme.colors.background,
+                        }}
+                    >
                         <Stack.Screen name='(tabs)' />
                     </Stack>
                 </PaperProvider>

@@ -1,12 +1,8 @@
-import * as SQLite from "expo-sqlite";
+import { Platform } from "react-native";
 import { useSelector } from "react-redux";
-import {
-    store,
-    gainsSqlActionSpecifier,
-    GainsSqlActionObject,
-} from "@/state_store/store";
 
 const initializeSQLiteDb = async () => {
+    const SQLite = await import("expo-sqlite");
     const db = await SQLite.openDatabaseAsync("gains.db");
     console.log(db);
     const createTables = await db.execAsync(`
@@ -30,13 +26,12 @@ const initializeSQLiteDb = async () => {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             info TEXT NOT NULL
         );
-        INSERT INTO dummy (info)
-        VALUES ('some dummy info, ya dummy');
+
         `);
     //const res = await createTables.executeAsync();
     //console.log(res);
     //await createTables.finalizeAsync();
-    const newRes = await db.getAllAsync("SELECT * FROM exercise;");
+    const newRes = await db.getAllAsync("SELECT * FROM dummy;");
     console.log(newRes);
 };
 

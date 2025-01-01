@@ -1,7 +1,7 @@
 interface Exercise {
     exerciseId: number;
     musclegroupid: number;
-    name: string;
+    exercisename: string;
     notes: string;
     dateAdded: Date;
     dateUpdated: Date | null;
