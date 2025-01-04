@@ -10,6 +10,7 @@ type ColorScheme = {
     error: string;
     customWhite: string;
     tokyoLaserBlue: string;
+    tokyoLaserBlueDulled: string;
     standardButtonBg: string;
 };
 
@@ -23,6 +24,7 @@ const colorScheme: ColorScheme = {
     error: "#FF3D71",
     customWhite: "#DBD1B6",
     tokyoLaserBlue: "#2AC3DE",
+    tokyoLaserBlueDulled: "#608a91",
     standardButtonBg: "#24283b",
 };
 

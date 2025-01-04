@@ -1,11 +1,11 @@
-interface Exercise {
-    exerciseId: number;
+type Exercise = {
+    exerciseid: number;
     musclegroupid: number;
     exercisename: string;
     notes: string;
-    dateAdded: Date;
-    dateUpdated: Date | null;
-}
+    dateadded: Date;
+    dateupdated: Date | null;
+};
 
 interface ExerciseDto {
     name: string;

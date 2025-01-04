@@ -1,5 +1,5 @@
 export default interface WeightUnitLookup {
-  weightUnitLookupId: number;
-  weightUnitName: string;
-  weightUnitLabel: string;
+    weightunitlookupid: number;
+    weightunitname: string;
+    weightunitlabel: string;
 }
