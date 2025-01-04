@@ -208,61 +208,6 @@ const ExerciseGroupList = ({ onGroupsChange }: ExerciseGroupListProps) => {
                     selectedOption={selectedExercise}
                     placeholder='Select Exercise'
                 />
-                {/* <Menu
-                    visible={menuVisible}
-                    theme={theme}
-                    onDismiss={() => setMenuVisible(false)}
-                    anchorPosition='bottom'
-                    contentStyle={{
-                        backgroundColor: theme.colors.buttonStandard,
-                    }}
-                    style={{
-                        position: "absolute",
-                        left: 0,
-                    }}
-                    anchor={
-                        <Button
-                            onPress={() => setMenuVisible(true)}
-                            textColor={theme.colors.laserBlue}
-                            style={{
-                                backgroundColor: theme.colors.buttonStandard,
-                            }}
-                        >
-                            {selectedExercise?.exercisename ||
-                                "Select Exercise"}
-                        </Button>
-                    }
-                >
-                    {exercises.map((exercise) => (
-                        <Menu.Item
-                            key={exercise.exerciseid}
-                            onPress={() => {
-                                handleAddGroupNoButton(exercise);
-                                setExpandedGroup(exercise.exercisename);
-                                setMenuVisible(false);
-                            }}
-                            title={exercise.exercisename}
-                            style={{
-                                backgroundColor: theme.colors.buttonStandard,
-                            }}
-                        />
-                    ))}
-                </Menu> */}
-
-                {
-                    // <Button
-                    //     mode='contained'
-                    //     onPress={handleAddGroup}
-                    //     style={{
-                    //         marginBottom: 16,
-                    //         backgroundColor: theme.colors.buttonStandard,
-                    //     }}
-                    //     disabled={!selectedExercise}
-                    //     textColor={theme.colors.paperWhite}
-                    // >
-                    //     Add Exercise
-                    // </Button>
-                }
 
                 {groups.map((group) => (
                     <List.Accordion
@@ -289,16 +234,6 @@ const ExerciseGroupList = ({ onGroupsChange }: ExerciseGroupListProps) => {
                             anchor={
                                 <Button
                                     onPress={() => {
-                                        // const updatedGroups = groups.map((g) =>
-                                        //     g.name === group.name
-                                        //         ? {
-                                        //               ...g,
-                                        //               weightUnitMenuVisible:
-                                        //                   true,
-                                        //           }
-                                        //         : g
-                                        // );
-                                        // setGroups(updatedGroups);
                                         setWeightUnitMenuVisible(true);
                                     }}
                                 >
@@ -316,7 +251,6 @@ const ExerciseGroupList = ({ onGroupsChange }: ExerciseGroupListProps) => {
                                                 ? { ...g, weightUnit: unit }
                                                 : g
                                         );
-                                        console.log("wtf");
                                         setGroups(updatedGroups);
                                         setWeightUnitMenuVisible(false);
                                     }}
