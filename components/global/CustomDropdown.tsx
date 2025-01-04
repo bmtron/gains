@@ -73,7 +73,6 @@ const CustomDropdown = ({
                     <View style={styles.optionsWrapper}>
                         <ScrollView
                             style={styles.optionsScroll}
-                            nestedScrollEnabled={true}
                             keyboardShouldPersistTaps='handled'
                         >
                             {filteredOptions.map((option) => (

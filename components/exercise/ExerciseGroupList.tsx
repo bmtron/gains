@@ -54,13 +54,10 @@ const ExerciseGroupList = ({ onGroupsChange }: ExerciseGroupListProps) => {
     const [weightUnitMenuVisible, setWeightUnitMenuVisible] = useState(false);
 
     useEffect(() => {
-        if (onGroupsChange) {
-            onGroupsChange(groups);
-        }
         loadExercises();
         loadGroups();
         loadWeightUnits();
-    }, [groups, onGroupsChange]);
+    }, []);
 
     const loadGroups = async () => {
         try {
@@ -162,7 +159,9 @@ const ExerciseGroupList = ({ onGroupsChange }: ExerciseGroupListProps) => {
                 sets: [],
             },
         ];
-
+        if (onGroupsChange) {
+            onGroupsChange(updatedGroups);
+        }
         setGroups(updatedGroups);
         await saveGroups(updatedGroups);
         setSelectedExercise(null);
@@ -290,16 +289,16 @@ const ExerciseGroupList = ({ onGroupsChange }: ExerciseGroupListProps) => {
                             anchor={
                                 <Button
                                     onPress={() => {
-                                        const updatedGroups = groups.map((g) =>
-                                            g.name === group.name
-                                                ? {
-                                                      ...g,
-                                                      weightUnitMenuVisible:
-                                                          true,
-                                                  }
-                                                : g
-                                        );
-                                        setGroups(updatedGroups);
+                                        // const updatedGroups = groups.map((g) =>
+                                        //     g.name === group.name
+                                        //         ? {
+                                        //               ...g,
+                                        //               weightUnitMenuVisible:
+                                        //                   true,
+                                        //           }
+                                        //         : g
+                                        // );
+                                        // setGroups(updatedGroups);
                                         setWeightUnitMenuVisible(true);
                                     }}
                                 >
@@ -317,6 +316,7 @@ const ExerciseGroupList = ({ onGroupsChange }: ExerciseGroupListProps) => {
                                                 ? { ...g, weightUnit: unit }
                                                 : g
                                         );
+                                        console.log("wtf");
                                         setGroups(updatedGroups);
                                         setWeightUnitMenuVisible(false);
                                     }}
