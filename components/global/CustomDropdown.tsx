@@ -200,7 +200,7 @@ const CustomDropdown = ({
 };
 const styles = StyleSheet.create({
     container: {
-        position: "relative",
+        //position: "relative",
         zIndex: 1000,
         width: "100%",
     },
@@ -213,17 +213,17 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     dropdownContainer: {
-        position: "absolute",
-        top: "100%",
-        left: 0,
-        right: 0,
+        // position: "absolute",
+        // top: "100%",
+        // left: 0,
+        // right: 0,
         borderRadius: 8,
         elevation: 5,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 4,
-        maxHeight: 300,
+        //maxHeight: 300,
         width: "100%",
         zIndex: 1000,
     },
