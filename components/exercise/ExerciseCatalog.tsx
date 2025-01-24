@@ -16,7 +16,7 @@ const ExerciseCatalog = () => {
             setExerciseList(exercises);
         };
         getAllExercises();
-    });
+    }, []);
     return (
         <View
             style={{

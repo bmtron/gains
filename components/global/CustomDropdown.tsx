@@ -7,8 +7,10 @@ import {
     TouchableOpacity,
     LayoutAnimation,
     StyleSheet,
+    Platform,
 } from "react-native";
-import { ScrollView } from "react-native-gesture-handler";
+import { ScrollView as GestureScrollView } from "react-native-gesture-handler";
+import { ScrollView as RNScrollView } from "react-native";
 
 interface CustomDropdownProps {
     options: Array<{ exerciseid: number; exercisename: string }>;
@@ -70,10 +72,16 @@ const CustomDropdown = ({
                         placeholder='Search exercises...'
                         placeholderTextColor={theme.colors.placeholder}
                     />
-                    <View style={styles.optionsWrapper}>
-                        <ScrollView
+                    {Platform.OS === "android" ? (
+                        <GestureScrollView
                             style={styles.optionsScroll}
+                            contentContainerStyle={
+                                styles.scrollContentContainer
+                            }
                             keyboardShouldPersistTaps='handled'
+                            bounces={false}
+                            showsVerticalScrollIndicator={true}
+                            nestedScrollEnabled={true}
                         >
                             {filteredOptions.map((option) => (
                                 <TouchableOpacity
@@ -95,8 +103,45 @@ const CustomDropdown = ({
                                     </Text>
                                 </TouchableOpacity>
                             ))}
-                        </ScrollView>
-                    </View>
+                        </GestureScrollView>
+                    ) : (
+                        <></>
+                    )}
+                    {Platform.OS === "ios" ? (
+                        <RNScrollView
+                            style={styles.optionsScroll}
+                            contentContainerStyle={
+                                styles.scrollContentContainer
+                            }
+                            keyboardShouldPersistTaps='handled'
+                            bounces={false}
+                            showsVerticalScrollIndicator={true}
+                            nestedScrollEnabled={true}
+                        >
+                            {filteredOptions.map((option) => (
+                                <TouchableOpacity
+                                    key={option.exerciseid}
+                                    style={styles.option}
+                                    onPress={() => {
+                                        onSelect(option);
+                                        setIsOpen(false);
+                                        setSearchQuery("");
+                                    }}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.optionText,
+                                            { color: theme.colors.paperWhite },
+                                        ]}
+                                    >
+                                        {option.exercisename}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </RNScrollView>
+                    ) : (
+                        <></>
+                    )}
                 </View>
             )}
         </View>
@@ -138,7 +183,7 @@ const CustomDropdown = ({
     //                             }}
     //                         >
     //                             <Text
-    //                                 style={[
+    //                                 style={[                    <View style={styles.optionsWrapper}>
     //                                     styles.optionText,
     //                                     { color: theme.colors.paperWhite },
     //                                 ]}
@@ -154,6 +199,58 @@ const CustomDropdown = ({
     // );
 };
 const styles = StyleSheet.create({
+    container: {
+        //position: "relative",
+        zIndex: 1000,
+        width: "100%",
+    },
+    button: {
+        padding: 12,
+        borderRadius: 8,
+        width: "100%",
+    },
+    buttonText: {
+        fontSize: 16,
+    },
+    dropdownContainer: {
+        // position: "absolute",
+        // top: "100%",
+        // left: 0,
+        // right: 0,
+        borderRadius: 8,
+        elevation: 5,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        //maxHeight: 300,
+        width: "100%",
+        zIndex: 1000,
+    },
+    searchInput: {
+        padding: 8,
+        borderRadius: 4,
+        margin: 8,
+        fontSize: 16,
+    },
+    optionsScroll: {
+        maxHeight: 200,
+        width: "100%",
+    },
+    scrollContentContainer: {
+        flexGrow: 1,
+    },
+    option: {
+        padding: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: "rgba(0,0,0,0.1)",
+    },
+    optionText: {
+        fontSize: 16,
+    },
+});
+
+const styles2 = StyleSheet.create({
     container: {
         position: "relative",
         zIndex: 1000,

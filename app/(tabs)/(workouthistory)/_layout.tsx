@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 
-const Workout = () => {
+const WorkoutHistoryMain = () => {
     return (
         <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name='index' />
@@ -8,4 +8,4 @@ const Workout = () => {
     );
 };
 
-export default Workout;
+export default WorkoutHistoryMain;

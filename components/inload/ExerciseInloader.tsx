@@ -29,26 +29,10 @@ const ExerciseInloader = () => {
     const [dialogText, setDialogText] = useState<string>("");
     const [dialogTitle, setDialogTitle] = useState<string>("");
 
-    async function testLocalDb() {
-        if (SQLite === undefined) {
-            return;
-        }
-        const db = await SQLite.openDatabaseAsync("gains.db");
-        console.log(db);
-        const res = await db.getAllAsync("SELECT * FROM dummy;");
-
-        console.log(res);
-        console.log("did we get here?");
-    }
     useEffect(() => {
-        const sqliteGetter = async () => {
-            const sqlRes = await import("expo-sqlite");
-            setSQLite(sqlRes.default);
-        };
         const muscleGroupFetcher = async () => {
             try {
                 const data = await getAllItems<MuscleGroup[]>("/musclegroup");
-                console.log(data);
                 setMuscleGroups(data);
             } catch (err) {
                 setDialogTitle("Error Loading Muscle Groups");
@@ -59,14 +43,6 @@ const ExerciseInloader = () => {
         };
 
         muscleGroupFetcher();
-
-        const dummySQLiteFetcher = async () => {
-            await testLocalDb();
-        };
-        if (Platform.OS !== "web") {
-            sqliteGetter();
-        }
-        dummySQLiteFetcher();
     }, []);
 
     function clearDialogInfo() {
