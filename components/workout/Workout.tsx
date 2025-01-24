@@ -7,15 +7,14 @@ import { useAppTheme } from "@/app/_layout";
 import { postWorkout } from "@/data/functions/postWorkout";
 import { ExerciseGroup } from "@/models/exerciseGroup";
 import { WorkoutDto } from "@/models/workoutDto";
-import ExerciseSet from "@/models/exercisesetModels";
-import { ExerciseSetDto } from "@/models/exerciseSetDto";
-
+import { WorkoutTimer } from "../common/WorkoutTimer";
 interface WorkoutData {
     startTime: Date;
     duration: number;
     exercises: ExerciseGroup[];
 }
 
+const MemoizedExerciseList = React.memo(ExerciseGroupList);
 const Workout = () => {
     const theme = useAppTheme();
     const [isRunning, setIsRunning] = useState(false);
@@ -112,7 +111,7 @@ const Workout = () => {
                 backgroundColor: theme.colors.background,
             }}
         >
-            <Text style={styles.timer}>{formatTime(elapsedTime)}</Text>
+            <WorkoutTimer elapsedTime={elapsedTime} />
 
             <View style={styles.buttonContainer}>
                 {!showExerciseList && (
@@ -137,7 +136,7 @@ const Workout = () => {
             </View>
 
             {showExerciseList && (
-                <ExerciseGroupList
+                <MemoizedExerciseList
                     onGroupsChange={setExerciseData}
                     clearOldData={willClearOldWorkoutData}
                 />

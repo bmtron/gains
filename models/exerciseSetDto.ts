@@ -1,7 +1,9 @@
 export interface ExerciseSetDto {
-    Exerciseid: number;
-    Weight: number;
-    Weightunitlookupid: number;
-    Repetitions: number;
-    Estimatedrpe: number;
+    exerciseid: number;
+    weight: number;
+    weightunitlookupid: number;
+    repetitions: number;
+    estimatedrpe: number;
+    dateadded?: Date | undefined;
+    workoutid?: number;
 }
