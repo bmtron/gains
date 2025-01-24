@@ -4,11 +4,16 @@ import { Text, Button } from "react-native-paper";
 import ExerciseGroupList from "../exercise/ExerciseGroupList";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppTheme } from "@/app/_layout";
+import { postWorkout } from "@/data/functions/postWorkout";
+import { ExerciseGroup } from "@/models/exerciseGroup";
+import { WorkoutDto } from "@/models/workoutDto";
+import ExerciseSet from "@/models/exercisesetModels";
+import { ExerciseSetDto } from "@/models/exerciseSetDto";
 
 interface WorkoutData {
     startTime: Date;
     duration: number;
-    exercises: any[]; // Replace with your exercise group type
+    exercises: ExerciseGroup[];
 }
 
 const Workout = () => {
@@ -17,7 +22,9 @@ const Workout = () => {
     const [startTime, setStartTime] = useState<Date | null>(null);
     const [elapsedTime, setElapsedTime] = useState(0);
     const [showExerciseList, setShowExerciseList] = useState(false);
-    const [exerciseData, setExerciseData] = useState<any[]>([]);
+    const [exerciseData, setExerciseData] = useState<ExerciseGroup[]>([]);
+    const [willClearOldWorkoutData, setWillClearOldWorkoutData] =
+        useState<boolean>(false);
     const timerInterval = useRef<NodeJS.Timeout>();
 
     useEffect(() => {
@@ -40,10 +47,12 @@ const Workout = () => {
             .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
     };
 
-    const handleStartWorkout = () => {
+    const handleStartWorkout = async () => {
         setIsRunning(true);
         setStartTime(new Date());
         setShowExerciseList(true);
+        await AsyncStorage.removeItem("workouts");
+        setExerciseData([]);
     };
 
     const handlePauseWorkout = () => {
@@ -73,10 +82,18 @@ const Workout = () => {
                 "workouts",
                 JSON.stringify(existingWorkouts)
             );
-
+            const exerciseSets = workoutData.exercises.flatMap(
+                (group) => group.sets
+            );
+            console.log(exerciseSets);
+            const workoutDto: WorkoutDto = {
+                DateStarted: workoutData.startTime,
+                ExerciseSets: exerciseSets,
+            };
             // Send to backend
             // IMPLEMENT THIS LATER
             // await postItem('/workouts', workoutData);
+            await postWorkout(workoutDto);
 
             // Reset component state
             setShowExerciseList(false);
@@ -120,7 +137,10 @@ const Workout = () => {
             </View>
 
             {showExerciseList && (
-                <ExerciseGroupList onGroupsChange={setExerciseData} />
+                <ExerciseGroupList
+                    onGroupsChange={setExerciseData}
+                    clearOldData={willClearOldWorkoutData}
+                />
             )}
         </View>
     );

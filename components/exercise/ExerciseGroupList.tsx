@@ -1,42 +1,41 @@
 import React, { useState, useEffect } from "react";
 import { View, ScrollView } from "react-native";
-import {
-    TextInput,
-    Button,
-    Text,
-    List,
-    Menu,
-    Divider,
-} from "react-native-paper";
+import { TextInput, Button, Text, List, Menu, Card } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppTheme } from "@/app/_layout";
 import getAllItems from "@/data/functions/getAllItems";
 import { Exercise } from "@/models/exerciseModels";
 import WeightUnitLookup from "@/models/weightunitlookup";
 import CustomDropdown from "../global/CustomDropdown";
+import { WeightUnit } from "@/models/weightUnit";
+import { ExerciseGroup } from "@/models/exerciseGroup";
+import ExerciseSet from "@/models/exercisesetModels";
+import { ExerciseSetDto } from "@/models/exerciseSetDto";
 
 const STORAGE_KEY = "@exercise_groups";
+const HISTORY_STORAGE_KEY = "@exercise_history";
 
-interface WeightUnit extends WeightUnitLookup {}
-
-interface ExerciseSet {
-    id: string;
-    weight: number;
-    reps: number;
-    rpe?: number; // Optional RPE field
+interface HistoricalSet extends ExerciseSetDto {
+    date: string;
+}
+interface HistoricalWorkout {
+    date: string;
+    sets: HistoricalSet[];
+    weightUnit: WeightUnit;
 }
 
-interface ExerciseGroup {
-    exerciseid: number;
-    name: string;
-    sets: ExerciseSet[];
-    weightUnit?: WeightUnit; // Make weightUnit optional
+interface ExerciseHistory {
+    [exerciseId: number]: HistoricalWorkout[];
 }
 
 interface ExerciseGroupListProps {
     onGroupsChange?: (groups: ExerciseGroup[]) => void;
+    clearOldData: boolean;
 }
-const ExerciseGroupList = ({ onGroupsChange }: ExerciseGroupListProps) => {
+const ExerciseGroupList = ({
+    onGroupsChange,
+    clearOldData,
+}: ExerciseGroupListProps) => {
     const theme = useAppTheme();
 
     const [groups, setGroups] = useState<ExerciseGroup[]>([]);
@@ -52,13 +51,68 @@ const ExerciseGroupList = ({ onGroupsChange }: ExerciseGroupListProps) => {
     const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
     const [weightUnits, setWeightUnits] = useState<WeightUnit[]>([]);
     const [weightUnitMenuVisible, setWeightUnitMenuVisible] = useState(false);
+    const [exerciseHistory, setExerciseHistory] = useState<ExerciseHistory>({});
+    const [showHistory, setShowHistory] = useState<boolean>(false);
 
     useEffect(() => {
         loadExercises();
         loadGroups();
         loadWeightUnits();
+        loadExerciseHistory();
+        clearOldDataTask();
     }, []);
+    const clearOldDataTask = async () => {
+        if (clearOldData) {
+            setGroups([]);
+            setExercises([]);
+            await AsyncStorage.removeItem(STORAGE_KEY);
+            await AsyncStorage.removeItem(HISTORY_STORAGE_KEY);
+        }
+    };
+    const loadExerciseHistory = async () => {
+        try {
+            const stored = await AsyncStorage.getItem(HISTORY_STORAGE_KEY);
+            if (stored) {
+                setExerciseHistory(JSON.parse(stored));
+            }
+        } catch (error) {
+            console.error("Error loading exercise history:", error);
+        }
+    };
+    const saveExerciseHistory = async (updatedHistory: ExerciseHistory) => {
+        try {
+            await AsyncStorage.setItem(
+                HISTORY_STORAGE_KEY,
+                JSON.stringify(updatedHistory)
+            );
+            setExerciseHistory(updatedHistory);
+        } catch (error) {
+            console.error("Error saving exercise history:", error);
+        }
+    };
+    const saveToHistory = async (groupName: string, sets: ExerciseSetDto[]) => {
+        const group = groups.find((g) => g.name === groupName);
+        if (!group || sets.length === 0) return;
 
+        const workout: HistoricalWorkout = {
+            date: new Date().toISOString(),
+            sets: sets.map((set) => ({
+                ...set,
+                date: new Date().toISOString(),
+            })),
+            weightUnit: group.weightUnit || weightUnits[0],
+        };
+
+        const updatedHistory = {
+            ...exerciseHistory,
+            [group.exerciseid]: [
+                ...(exerciseHistory[group.exerciseid] || []),
+                workout,
+            ],
+        };
+
+        await saveExerciseHistory(updatedHistory);
+    };
     const loadGroups = async () => {
         try {
             const stored = await AsyncStorage.getItem(STORAGE_KEY);
@@ -78,6 +132,16 @@ const ExerciseGroupList = ({ onGroupsChange }: ExerciseGroupListProps) => {
             );
         } catch (error) {
             console.error("Error saving groups:", error);
+        }
+    };
+
+    const loadHistoricalWorkouts = async () => {
+        try {
+            const data = await getAllItems<ExerciseSet[]>("/exerciseset");
+        } catch (error) {
+            console.error("Error loading exercise sets:", error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -159,6 +223,7 @@ const ExerciseGroupList = ({ onGroupsChange }: ExerciseGroupListProps) => {
                 sets: [],
             },
         ];
+
         if (onGroupsChange) {
             onGroupsChange(updatedGroups);
         }
@@ -169,31 +234,78 @@ const ExerciseGroupList = ({ onGroupsChange }: ExerciseGroupListProps) => {
 
     const handleAddSet = async (groupName: string) => {
         if (!weight || !reps) return;
+        const group = groups.find((g) => g.name === groupName);
+        if (group === undefined) return;
+
+        const newSet: ExerciseSetDto = {
+            Exerciseid: group?.exerciseid,
+            Weight: parseFloat(weight),
+            Repetitions: parseInt(reps),
+            Estimatedrpe: rpe ? parseFloat(rpe) : 0,
+            Weightunitlookupid:
+                group.weightUnit !== undefined
+                    ? group.weightUnit.weightunitlookupid
+                    : 0,
+        };
 
         const updatedGroups = groups.map((group) =>
             group.name === groupName
                 ? {
                       ...group,
-                      sets: [
-                          ...group.sets,
-                          {
-                              id: Date.now().toString(),
-                              weight: parseFloat(weight),
-                              reps: parseInt(reps),
-                              rpe: rpe ? parseFloat(rpe) : undefined,
-                          },
-                      ],
+                      sets: [...group.sets, newSet],
                   }
                 : group
         );
 
         setGroups(updatedGroups);
+        console.log(updatedGroups);
         await saveGroups(updatedGroups);
+
+        if (group) {
+            await saveToHistory(groupName, [newSet]);
+        }
+        if (onGroupsChange) {
+            onGroupsChange(updatedGroups);
+        }
         setWeight("");
         setReps("");
         setRpe("");
     };
+    const renderExerciseHistory = (exerciseId: number) => {
+        const history = exerciseHistory[exerciseId] || [];
+        if (history.length === 0) {
+            return (
+                <Card style={{ margin: 8, padding: 8 }}>
+                    <Text>No previous workout data available.</Text>
+                </Card>
+            );
+        }
 
+        return (
+            <View style={{ margin: 8 }}>
+                {history
+                    .slice(-3)
+                    .reverse()
+                    .map((workout, idx) => (
+                        <Card key={idx} style={{ marginBottom: 8, padding: 8 }}>
+                            <Text style={{ fontWeight: "bold" }}>
+                                {new Date(workout.date).toLocaleDateString()}
+                            </Text>
+                            {workout.sets.map((set, setIdx) => (
+                                <Text key={setIdx}>
+                                    Set {setIdx + 1}: {set.Weight}
+                                    {workout.weightUnit.weightunitlabel} x{" "}
+                                    {set.Repetitions} reps
+                                    {set.Estimatedrpe
+                                        ? ` @ RPE ${set.Estimatedrpe}`
+                                        : ""}
+                                </Text>
+                            ))}
+                        </Card>
+                    ))}
+            </View>
+        );
+    };
     return (
         <ScrollView
             style={{ flex: 1, backgroundColor: theme.colors.background }}
@@ -224,6 +336,14 @@ const ExerciseGroupList = ({ onGroupsChange }: ExerciseGroupListProps) => {
                             )
                         }
                     >
+                        {/* Add Historical Performance Section */}
+                        <List.Accordion
+                            title='Previous Workout Data'
+                            expanded={showHistory}
+                            onPress={() => setShowHistory(!showHistory)}
+                        >
+                            {renderExerciseHistory(group.exerciseid)}
+                        </List.Accordion>
                         <Menu
                             visible={weightUnitMenuVisible}
                             theme={theme}
@@ -246,11 +366,14 @@ const ExerciseGroupList = ({ onGroupsChange }: ExerciseGroupListProps) => {
                                 <Menu.Item
                                     key={unit.weightunitlookupid}
                                     onPress={() => {
+                                        console.log(groups);
                                         const updatedGroups = groups.map((g) =>
                                             g.name === group.name
                                                 ? { ...g, weightUnit: unit }
                                                 : g
                                         );
+                                        console.log(updatedGroups);
+                                        console.log(unit);
                                         setGroups(updatedGroups);
                                         setWeightUnitMenuVisible(false);
                                     }}
@@ -261,12 +384,14 @@ const ExerciseGroupList = ({ onGroupsChange }: ExerciseGroupListProps) => {
 
                         {group.sets.map((set, index) => (
                             <List.Item
-                                key={set.id}
+                                key={index}
                                 title={`Set ${index + 1}`}
-                                description={`Weight: ${set.weight}${
+                                description={`Weight: ${set.Weight}${
                                     group.weightUnit?.weightunitlabel || ""
-                                }, Reps: ${set.reps}${
-                                    set.rpe ? `, RPE: ${set.rpe}` : ""
+                                }, Reps: ${set.Repetitions}${
+                                    set.Estimatedrpe
+                                        ? `, RPE: ${set.Estimatedrpe}`
+                                        : ""
                                 }`}
                             />
                         ))}
