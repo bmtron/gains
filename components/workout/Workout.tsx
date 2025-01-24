@@ -86,8 +86,8 @@ const Workout = () => {
             );
             console.log(exerciseSets);
             const workoutDto: WorkoutDto = {
-                DateStarted: workoutData.startTime,
-                ExerciseSets: exerciseSets,
+                datestarted: workoutData.startTime,
+                exercisesets: exerciseSets,
             };
             // Send to backend
             // IMPLEMENT THIS LATER

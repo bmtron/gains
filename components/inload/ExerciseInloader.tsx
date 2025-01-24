@@ -33,7 +33,6 @@ const ExerciseInloader = () => {
         const muscleGroupFetcher = async () => {
             try {
                 const data = await getAllItems<MuscleGroup[]>("/musclegroup");
-                console.log(data);
                 setMuscleGroups(data);
             } catch (err) {
                 setDialogTitle("Error Loading Muscle Groups");

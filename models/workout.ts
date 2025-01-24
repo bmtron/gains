@@ -1,6 +1,6 @@
 export default interface Workout {
-  workoutId: number;
-  dateStarted: Date;
-  dateAdded: Date;
-  dateUpdated: Date | null;
+    workoutid: number;
+    datestarted: Date;
+    dateadded: Date;
+    dateupdated: Date | null;
 }

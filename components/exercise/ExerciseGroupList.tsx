@@ -1,17 +1,14 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { View, ScrollView, TextInput as RNTI } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, ScrollView } from "react-native";
 import { TextInput, Button, Text, List, Menu, Card } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppTheme } from "@/app/_layout";
 import getAllItems from "@/data/functions/getAllItems";
 import { Exercise } from "@/models/exerciseModels";
-import WeightUnitLookup from "@/models/weightunitlookup";
 import CustomDropdown from "../global/CustomDropdown";
 import { WeightUnit } from "@/models/weightUnit";
 import { ExerciseGroup } from "@/models/exerciseGroup";
-import ExerciseSet from "@/models/exercisesetModels";
 import { ExerciseSetDto } from "@/models/exerciseSetDto";
-import colorScheme from "@/constants/colorscheme";
 
 const STORAGE_KEY = "@exercise_groups";
 const HISTORY_STORAGE_KEY = "@exercise_history";
@@ -290,31 +287,31 @@ const ExerciseGroupList = ({
         const mostRecentWorkoutId = Math.max(
             ...history.map((set) => set.workoutid || 0)
         );
+        const filteredHistoryItems = history
+            .slice(-3)
+            .filter((set) => set.workoutid === mostRecentWorkoutId);
         return (
             <View style={{ margin: 8 }}>
-                {history
-                    .slice(-3)
-                    .reverse()
-                    .filter((set) => set.workoutid === mostRecentWorkoutId)
-                    .map((set, idx) => (
-                        <Card key={idx} style={{ marginBottom: 8, padding: 8 }}>
-                            <Text style={{ fontWeight: "bold" }}>
-                                {set.date === undefined
-                                    ? ""
-                                    : new Date(set.date).toLocaleDateString()}
-                            </Text>
-                            <Text key={idx}>
-                                Set {idx + 1}: {set.weight}
-                                {set.weightUnit.weightunitlabel} x {set.reps}{" "}
-                                reps
-                                {set.rpe ? ` @ RPE ${set.rpe}` : ""}
-                            </Text>
-                        </Card>
+                <Text style={{ fontWeight: "bold" }}>
+                    {filteredHistoryItems[0].date === undefined
+                        ? ""
+                        : new Date(
+                              filteredHistoryItems[0].date
+                          ).toLocaleDateString()}
+                </Text>
+                <Card style={{ marginBottom: 8, padding: 8 }}>
+                    {filteredHistoryItems.map((set, idx) => (
+                        <Text key={idx}>
+                            Set {idx + 1}: {set.weight}
+                            {set.weightUnit.weightunitlabel} x {set.reps} reps
+                            {set.rpe ? ` @ RPE ${set.rpe}` : ""}
+                        </Text>
                     ))}
+                </Card>
             </View>
         );
     };
-    console.log("RENDER?");
+
     return (
         <ScrollView
             style={{ flex: 1, backgroundColor: theme.colors.background }}
@@ -410,6 +407,8 @@ const ExerciseGroupList = ({
                                         group.weightUnit?.weightunitlabel +
                                         ")"
                                     }
+                                    value={weight}
+                                    textContentType='none'
                                     onChangeText={(text) => setWeight(text)}
                                     style={{ marginBottom: 8 }}
                                 />
