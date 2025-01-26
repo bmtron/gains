@@ -10,12 +10,13 @@
         "newArchEnabled": true,
         "ios": {
             "supportsTablet": true,
-            "bundleIdentifier": "com.bmtron.Gains"
+            "bundleIdentifier": "com.bmtron.Gains",
+            "icon": "./assets/images/gains_icon_ios.png"
         },
         "android": {
             "adaptiveIcon": {
-                "foregroundImage": "./assets/images/adaptive-icon.png",
-                "backgroundColor": "#ffffff"
+                "foregroundImage": "./assets/images/gains_icon_android_fg.png",
+                "backgroundImage": "./assets/images/gains_icon_android_bg.png"
             },
             "package": "com.bmtron.Gains"
         },

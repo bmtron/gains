@@ -39,17 +39,30 @@ const WorkoutItem = ({ workout, exerciseList }: WorkoutItemProps) => {
                     theme={theme}
                     title={exercise?.exercisename}
                     description={() => (
-                        <Surface theme={theme}>
-                            {workout.ExerciseSets.filter(
-                                (set) => set.exerciseid === exercise?.exerciseid
-                            ).map((set, setIndex) => (
-                                <Text key={setIndex} theme={theme}>
-                                    Set {setIndex + 1}: {set.weight}lbs ×{" "}
-                                    {set.repetitions} reps
-                                    {set.estimatedrpe &&
-                                        ` @ RPE ${set.estimatedrpe}`}
-                                </Text>
-                            ))}
+                        <Surface
+                            theme={theme}
+                            style={{ margin: 10, padding: 10 }}
+                        >
+                            <ScrollView>
+                                {workout.ExerciseSets.filter(
+                                    (set) =>
+                                        set.exerciseid === exercise?.exerciseid
+                                ).map((set, setIndex) => (
+                                    <Text
+                                        key={setIndex}
+                                        theme={theme}
+                                        style={{
+                                            color: theme.colors.paperWhite,
+                                            padding: 5,
+                                        }}
+                                    >
+                                        Set {setIndex + 1}: {set.weight}lbs ×{" "}
+                                        {set.repetitions} reps
+                                        {set.estimatedrpe &&
+                                            ` @ RPE ${set.estimatedrpe}`}
+                                    </Text>
+                                ))}
+                            </ScrollView>
                         </Surface>
                     )}
                 />
