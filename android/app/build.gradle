@@ -86,9 +86,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.anonymous.Gains'
+    namespace 'com.bmtron.Gains'
     defaultConfig {
-        applicationId 'com.anonymous.Gains'
+        applicationId 'com.bmtron.Gains'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

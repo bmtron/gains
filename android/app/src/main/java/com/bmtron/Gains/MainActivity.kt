@@ -1,4 +1,4 @@
-package com.anonymous.Gains
+package com.bmtron.Gains
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
