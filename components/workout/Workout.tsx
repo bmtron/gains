@@ -8,12 +8,13 @@ import { postWorkout } from "@/data/functions/postWorkout";
 import { ExerciseGroup } from "@/models/exerciseGroup";
 import { WorkoutDto } from "@/models/workoutDto";
 import { WorkoutTimer } from "../common/WorkoutTimer";
+import NotificationModal from "../common/NotificationModal";
 interface WorkoutData {
     startTime: Date;
     duration: number;
     exercises: ExerciseGroup[];
 }
-
+const STORAGE_KEY = "@exercise_groups";
 const MemoizedExerciseList = React.memo(ExerciseGroupList);
 const Workout = () => {
     const theme = useAppTheme();
@@ -25,6 +26,7 @@ const Workout = () => {
     const [willClearOldWorkoutData, setWillClearOldWorkoutData] =
         useState<boolean>(false);
     const timerInterval = useRef<NodeJS.Timeout>();
+    const [modalVisible, setModalVisible] = useState(false);
 
     useEffect(() => {
         if (isRunning) {
@@ -54,6 +56,15 @@ const Workout = () => {
         setExerciseData([]);
     };
 
+    const handleCancelWorkout = async () => {
+        // TODO: probably should add a confirmation modal...
+        await AsyncStorage.removeItem(STORAGE_KEY);
+        setIsRunning(false);
+        setShowExerciseList(false);
+        setElapsedTime(0);
+        setStartTime(null);
+        setExerciseData([]);
+    };
     const handlePauseWorkout = () => {
         setIsRunning(false);
     };
@@ -63,6 +74,11 @@ const Workout = () => {
     };
 
     const handleFinishWorkout = async () => {
+        if (!exerciseData || exerciseData.length === 0) {
+            setModalVisible(true);
+            return;
+        }
+
         setIsRunning(false);
         if (!startTime) return;
 
@@ -86,12 +102,10 @@ const Workout = () => {
             );
             console.log(exerciseSets);
             const workoutDto: WorkoutDto = {
-                datestarted: workoutData.startTime,
-                exercisesets: exerciseSets,
+                DateStarted: workoutData.startTime,
+                ExerciseSets: exerciseSets,
             };
             // Send to backend
-            // IMPLEMENT THIS LATER
-            // await postItem('/workouts', workoutData);
             await postWorkout(workoutDto);
 
             // Reset component state
@@ -111,6 +125,11 @@ const Workout = () => {
                 backgroundColor: theme.colors.background,
             }}
         >
+            <NotificationModal
+                message='Cannot finish workout with no exercises. Please add at least one exercise/set before finishing the workout.'
+                setModalVisibile={setModalVisible}
+                isVisible={modalVisible}
+            />
             <WorkoutTimer elapsedTime={elapsedTime} />
 
             <View style={styles.buttonContainer}>
@@ -128,6 +147,11 @@ const Workout = () => {
                                 Resume
                             </Button>
                         )}
+                        <Button
+                            onPress={async () => await handleCancelWorkout()}
+                        >
+                            Cancel
+                        </Button>
                         <Button onPress={handleFinishWorkout}>
                             Finish Workout
                         </Button>

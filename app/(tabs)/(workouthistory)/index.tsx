@@ -64,7 +64,9 @@ const WorkoutHistoryBase = () => {
     }, [exerciseSetsLoaded]);
 
     return (
-        <SafeAreaView style={{ flex: 1 }}>
+        <SafeAreaView
+            style={{ flex: 1, backgroundColor: theme.colors.background }}
+        >
             {exerciseList && workouts && (
                 <WorkoutHistory
                     exerciseList={exerciseList}
