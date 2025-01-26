@@ -7,7 +7,6 @@ import { postExercise } from "@/data/functions/postExercise";
 import { ExerciseDto } from "@/models/exerciseModels";
 import MuscleGroup from "@/models/muscleGroupModels";
 import { CustomDialog } from "../global/CustomDialog";
-import getMuscleGroups from "@/data/functions/getMuscleGroups";
 import { Button } from "@/components/global/ThemedButton";
 import getAllItems from "@/data/functions/getAllItems";
 import PaddedView from "../global/PaddedView";
@@ -131,6 +130,7 @@ const ExerciseInloader = () => {
                     value={exerciseNotes}
                     onChangeText={(text) => setExerciseNotes(text)}
                 />
+
                 {renderMuscleGroupList()}
                 <View style={{ flex: 1, alignItems: "center" }}>
                     <Button

@@ -3,7 +3,7 @@ import { View } from "react-native";
 
 const PaddedView = (props: PropsWithChildren) => {
     return (
-        <View style={{ paddingLeft: 10, paddingRight: 10 }}>
+        <View style={{ flex: 1, paddingLeft: 10, paddingRight: 10 }}>
             {props.children}
         </View>
     );

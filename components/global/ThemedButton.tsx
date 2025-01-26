@@ -12,8 +12,10 @@ const Button = (props: ThemedButtonProps) => {
         <RNPButton
             style={{
                 backgroundColor: theme.colors.buttonStandard,
+
                 width: "50%",
             }}
+            textColor={theme.colors.paperWhite}
             onPress={async () => await props.onPress()}
         >
             {props.text}
