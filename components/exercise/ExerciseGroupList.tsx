@@ -474,6 +474,7 @@ const ExerciseGroupList = ({
                                             ")"
                                         }
                                         value={weight}
+                                        keyboardType='numeric'
                                         textContentType='none'
                                         onChangeText={(text) => setWeight(text)}
                                         style={{ marginBottom: 8 }}
