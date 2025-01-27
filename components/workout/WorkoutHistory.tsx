@@ -31,6 +31,7 @@ const WorkoutItem = ({ workout, exerciseList }: WorkoutItemProps) => {
         }
         return acc;
     }, [] as Exercise[]);
+
     return (
         <List.Accordion title={formatDate(workout.DateStarted)} theme={theme}>
             {workoutExercises.map((exercise, index) => (

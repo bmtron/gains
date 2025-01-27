@@ -9,12 +9,14 @@ import { ExerciseGroup } from "@/models/exerciseGroup";
 import { WorkoutDto } from "@/models/workoutDto";
 import { WorkoutTimer } from "../common/WorkoutTimer";
 import NotificationModal from "../common/NotificationModal";
+import { FAILED_POST_STORAGE_KEY, STORAGE_KEY } from "@/constants/storagekeys";
+import CustomAppBar from "../global/CustomAppBar";
 interface WorkoutData {
     startTime: Date;
     duration: number;
     exercises: ExerciseGroup[];
 }
-const STORAGE_KEY = "@exercise_groups";
+
 const MemoizedExerciseList = React.memo(ExerciseGroupList);
 const Workout = () => {
     const theme = useAppTheme();
@@ -27,6 +29,7 @@ const Workout = () => {
         useState<boolean>(false);
     const timerInterval = useRef<NodeJS.Timeout>();
     const [modalVisible, setModalVisible] = useState(false);
+    const [modalMessage, setModalMessage] = useState("");
 
     useEffect(() => {
         if (isRunning) {
@@ -38,15 +41,6 @@ const Workout = () => {
         }
         return () => clearInterval(timerInterval.current);
     }, [isRunning]);
-
-    const formatTime = (seconds: number): string => {
-        const hrs = Math.floor(seconds / 3600);
-        const mins = Math.floor((seconds % 3600) / 60);
-        const secs = seconds % 60;
-        return `${hrs.toString().padStart(2, "0")}:${mins
-            .toString()
-            .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-    };
 
     const handleStartWorkout = async () => {
         setIsRunning(true);
@@ -76,6 +70,9 @@ const Workout = () => {
     const handleFinishWorkout = async () => {
         if (!exerciseData || exerciseData.length === 0) {
             setModalVisible(true);
+            setModalMessage(
+                "Cannot finish workout with no exercises. Please add at least one exercise/set before finishing the workout."
+            );
             return;
         }
 
@@ -106,8 +103,18 @@ const Workout = () => {
                 ExerciseSets: exerciseSets,
             };
             // Send to backend
-            await postWorkout(workoutDto);
+            const postResult = await postWorkout(workoutDto);
 
+            if (!postResult) {
+                await AsyncStorage.setItem(
+                    JSON.stringify(workoutDto),
+                    FAILED_POST_STORAGE_KEY
+                );
+                setModalMessage(
+                    "Failed to save workout data to remote server. The data will be held in local storage until it is manually uploaded."
+                );
+                setModalVisible(true);
+            }
             // Reset component state
             setShowExerciseList(false);
             setElapsedTime(0);
@@ -126,7 +133,7 @@ const Workout = () => {
             }}
         >
             <NotificationModal
-                message='Cannot finish workout with no exercises. Please add at least one exercise/set before finishing the workout.'
+                message={modalMessage}
                 setModalVisibile={setModalVisible}
                 isVisible={modalVisible}
             />

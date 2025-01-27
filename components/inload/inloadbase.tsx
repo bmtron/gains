@@ -20,7 +20,7 @@ export default function InloadBase() {
                 <Text>Use this screen to add various items.</Text>
                 <Link
                     style={{ color: theme.colors.laserBlue }}
-                    href='/(tabs)/(inload)/exercise'
+                    href='/(tabs)/(configuration)/exercise'
                 >
                     Exercise Inload
                 </Link>

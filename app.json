@@ -11,7 +11,7 @@
         "ios": {
             "supportsTablet": true,
             "bundleIdentifier": "com.bmtron.Gains",
-            "icon": "./assets/images/gains_icon_ios.png"
+            "icon": "./assets/images/gains_icon_ios_fixed.png"
         },
         "android": {
             "adaptiveIcon": {

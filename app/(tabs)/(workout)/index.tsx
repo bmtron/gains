@@ -10,7 +10,6 @@ const WorkoutBase = () => {
             style={{ flex: 1, backgroundColor: theme.colors.background }}
         >
             <Workout />
-            {/* <ExerciseGroupList /> */}
         </SafeAreaView>
     );
 };
