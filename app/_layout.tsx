@@ -44,7 +44,6 @@ export default function RootLayout() {
                         <Stack
                             screenOptions={{
                                 headerShown: false,
-
                                 statusBarBackgroundColor:
                                     theme.colors.background,
                             }}
