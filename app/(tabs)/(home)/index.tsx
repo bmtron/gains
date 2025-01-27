@@ -158,7 +158,9 @@ export default function Index() {
         }
     };
     return (
-        <SafeAreaView>
+        <SafeAreaView
+            style={{ flex: 1, backgroundColor: theme.colors.background }}
+        >
             <ScrollView style={styles.container}>
                 <NotificationModal
                     isVisible={isModalVisible}
