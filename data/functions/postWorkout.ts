@@ -14,6 +14,7 @@ export async function postWorkout(workout: WorkoutDto): Promise<boolean> {
             : serverAddressDebug
         : serverAddress;
     const path = "/workout";
+    console.log(JSON.stringify(workout));
     const res = await fetch(endpoint + path, {
         method: "post",
         headers: { "Content-Type": "application/json" },
@@ -21,5 +22,6 @@ export async function postWorkout(workout: WorkoutDto): Promise<boolean> {
     });
 
     const resData = await res.json();
+    console.log(resData);
     return convert_response_to<boolean>(resData);
 }

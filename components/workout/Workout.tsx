@@ -11,6 +11,7 @@ import { WorkoutTimer } from "../common/WorkoutTimer";
 import NotificationModal from "../common/NotificationModal";
 import { FAILED_POST_STORAGE_KEY, STORAGE_KEY } from "@/constants/storagekeys";
 import CustomAppBar from "../global/CustomAppBar";
+import { postWorkoutWithTimeout } from "@/data/functions/postWorkoutWithTimeout";
 interface WorkoutData {
     startTime: Date;
     duration: number;
@@ -103,13 +104,8 @@ const Workout = () => {
                 ExerciseSets: exerciseSets,
             };
             // Send to backend
-            const postResult = await postWorkout(workoutDto);
-
-            if (!postResult) {
-                await AsyncStorage.setItem(
-                    JSON.stringify(workoutDto),
-                    FAILED_POST_STORAGE_KEY
-                );
+            const result = await postWorkoutWithTimeout(workoutDto);
+            if (!result) {
                 setModalMessage(
                     "Failed to save workout data to remote server. The data will be held in local storage until it is manually uploaded."
                 );

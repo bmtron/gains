@@ -1,14 +1,57 @@
 import { View, StyleSheet, ScrollView } from "react-native";
 import { Text, Card, Button, IconButton } from "react-native-paper";
-import { Link } from "expo-router";
+import { Link, useFocusEffect } from "expo-router";
 import { useAppTheme } from "@/app/_layout";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { router } from "expo-router";
+import { FAILED_POST_STORAGE_KEY } from "@/constants/storagekeys";
+import { convert_response_to } from "@/helpers/JsonConverter";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useState, useEffect, useCallback } from "react";
+import { WorkoutDto } from "@/models/workoutDto";
+import Workout from "@/models/workout";
+import { postWorkout } from "@/data/functions/postWorkout";
+import NotificationModal from "@/components/common/NotificationModal";
+import { ExerciseSetDto } from "@/models/exerciseSetDto";
+import { postWorkoutWithTimeout } from "@/data/functions/postWorkoutWithTimeout";
 
 export default function Index() {
     const theme = useAppTheme();
     const navigation = useNavigation();
+    const [failedData, setFailedData] = useState<WorkoutDto>();
+    const [modalMessage, setModalMessage] = useState("");
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    useFocusEffect(
+        useCallback(() => {
+            console.log("HIT_ONLOAD_FUNCTION_CALL_");
+            const checkForFailedData = async () => {
+                const failed = await AsyncStorage.getItem(
+                    FAILED_POST_STORAGE_KEY
+                );
+                if (failed !== null && failed != "") {
+                    const data = JSON.parse(failed);
+                    const workoutDto: WorkoutDto = {
+                        DateStarted: new Date(data.DateStarted),
+                        ExerciseSets: data.ExerciseSets.map(
+                            (set: any): ExerciseSetDto => ({
+                                exerciseid: Number(set.exerciseid),
+                                weight: Number(set.weight),
+                                repetitions: Number(set.repetitions),
+                                estimatedrpe: Number(set.estimatedrpe),
+                                weightunitlookupid: Number(
+                                    set.weightunitlookupid
+                                ),
+                            })
+                        ),
+                    };
+                    console.log(workoutDto);
+                    setFailedData(workoutDto);
+                }
+            };
+            checkForFailedData();
+        }, [])
+    );
     const styles = StyleSheet.create({
         container: {
             flex: 1,
@@ -74,10 +117,67 @@ export default function Index() {
             fontSize: 12,
             color: theme.colors.secondary,
         },
+        alertBanner: {
+            backgroundColor: theme.colors.error,
+            padding: 16,
+            marginHorizontal: 16,
+            marginTop: 16,
+            borderRadius: 8,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+        },
+        alertText: {
+            color: theme.colors.surface,
+            flex: 1,
+            marginRight: 8,
+        },
+        retryButton: {
+            backgroundColor: theme.colors.surface,
+            color: theme.colors.paperWhite,
+        },
     });
 
+    const handleRetrySync = async () => {
+        if (failedData !== undefined) {
+            const result = await postWorkoutWithTimeout(failedData);
+            if (result) {
+                setIsModalVisible(true);
+                setModalMessage(
+                    "Previously failed workout data has been successfully uploaded."
+                );
+                setFailedData(undefined);
+                await AsyncStorage.removeItem(FAILED_POST_STORAGE_KEY);
+                return;
+            }
+            setIsModalVisible(true);
+            setModalMessage(
+                "Error saving workout data. Ensure the internet is connected and the VPN is stable, and try again."
+            );
+        }
+    };
     return (
         <ScrollView style={styles.container}>
+            <NotificationModal
+                isVisible={isModalVisible}
+                setModalVisibile={setIsModalVisible}
+                message={modalMessage}
+            />
+            {failedData && (
+                <View style={styles.alertBanner}>
+                    <Text style={styles.alertText}>
+                        A workout(s) failed to sync with server
+                    </Text>
+                    <Button
+                        mode='contained'
+                        onPress={handleRetrySync}
+                        style={styles.retryButton}
+                        textColor={theme.colors.paperWhite}
+                    >
+                        Retry Sync
+                    </Button>
+                </View>
+            )}
             <View style={styles.header}>
                 <Text style={styles.welcomeText}>Ready to Train?</Text>
                 <IconButton
