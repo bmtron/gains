@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { View, StyleSheet } from "react-native";
 import { Text, Button } from "react-native-paper";
 import ExerciseGroupList from "../exercise/ExerciseGroupList";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppTheme } from "@/app/_layout";
 import { postWorkout } from "@/data/functions/postWorkout";
 import { ExerciseGroup } from "@/models/exerciseGroup";
@@ -47,13 +46,11 @@ const Workout = () => {
         setIsRunning(true);
         setStartTime(new Date());
         setShowExerciseList(true);
-        await AsyncStorage.removeItem("workouts");
         setExerciseData([]);
     };
 
     const handleCancelWorkout = async () => {
         // TODO: probably should add a confirmation modal...
-        await AsyncStorage.removeItem(STORAGE_KEY);
         setIsRunning(false);
         setShowExerciseList(false);
         setElapsedTime(0);
@@ -87,18 +84,10 @@ const Workout = () => {
         };
 
         try {
-            // Save to AsyncStorage
-            const workouts = await AsyncStorage.getItem("workouts");
-            const existingWorkouts = workouts ? JSON.parse(workouts) : [];
-            existingWorkouts.push(workoutData);
-            await AsyncStorage.setItem(
-                "workouts",
-                JSON.stringify(existingWorkouts)
-            );
             const exerciseSets = workoutData.exercises.flatMap(
                 (group) => group.sets
             );
-            console.log(exerciseSets);
+
             const workoutDto: WorkoutDto = {
                 DateStarted: workoutData.startTime,
                 ExerciseSets: exerciseSets,

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, ScrollView, TouchableOpacity } from "react-native";
+import { View, ScrollView, TouchableOpacity, Platform } from "react-native";
 import { TextInput, Button, Text, List, Menu, Card } from "react-native-paper";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppTheme } from "@/app/_layout";
 import getAllItems from "@/data/functions/getAllItems";
 import { Exercise } from "@/models/exerciseModels";
@@ -10,6 +9,7 @@ import { WeightUnit } from "@/models/weightUnit";
 import { ExerciseGroup } from "@/models/exerciseGroup";
 import { ExerciseSetDto } from "@/models/exerciseSetDto";
 import NotificationModal from "../common/NotificationModal";
+import { DB_NAME } from "@/constants/databaseconstants";
 
 const STORAGE_KEY = "@exercise_groups";
 const HISTORY_STORAGE_KEY = "@exercise_history";
@@ -34,11 +34,9 @@ const ExerciseGroupList = ({
 }: ExerciseGroupListProps) => {
     const theme = useAppTheme();
 
-    const weightInputRef = useRef(null);
     const [exerciseGroups, setExerciseGroups] = useState<ExerciseGroup[]>([]);
     const [exercises, setExercises] = useState<Exercise[]>([]);
     const [loading, setLoading] = useState(true);
-    const [menuVisible, setMenuVisible] = useState(false);
     const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
         null
     );
@@ -122,17 +120,18 @@ const ExerciseGroupList = ({
         if (clearOldData) {
             setExerciseGroups([]);
             setExercises([]);
-            await AsyncStorage.removeItem(STORAGE_KEY);
-            await AsyncStorage.removeItem(HISTORY_STORAGE_KEY);
+            /* SQLITE IMPLEMENTATION? */
         }
     };
 
     const loadGroups = async () => {
         try {
+            /*
             const stored = await AsyncStorage.getItem(STORAGE_KEY);
             if (stored) {
                 setExerciseGroups(JSON.parse(stored));
-            }
+            }*/
+            // SQLITE IMPLEMENTATION?
         } catch (error) {
             console.error("Error loading groups:", error);
         }
@@ -140,10 +139,11 @@ const ExerciseGroupList = ({
 
     const saveExerciseGroups = async (updatedGroups: ExerciseGroup[]) => {
         try {
-            await AsyncStorage.setItem(
+            /*await AsyncStorage.setItem(
                 STORAGE_KEY,
                 JSON.stringify(updatedGroups)
-            );
+            ); */
+            //SQLITE IMPLEMENTATION?
         } catch (error) {
             console.error("Error saving groups:", error);
         }
@@ -185,16 +185,42 @@ const ExerciseGroupList = ({
         return result;
     };
     const loadExercises = async () => {
-        try {
-            const data = await getAllItems<Exercise[]>("/exercise");
-            setExercises(data);
-        } catch (error) {
-            console.error("Error loading exercises:", error);
-        } finally {
-            setLoading(false);
+        if (Platform.OS === "web") {
+            try {
+                const data = await getAllItems<Exercise[]>("/exercise");
+                setExercises(data);
+            } catch (error) {
+                console.error("Error loading exercises:", error);
+            } finally {
+                setLoading(false); // do i even use this?
+            }
+        } else {
+            try {
+                const data = await getAllExercisesFromLocal();
+                setExercises(data);
+            } catch (error) {
+                console.error("Error loading exersises from local:", error);
+            } finally {
+                setLoading(false); // do i even use this?
+            }
         }
     };
 
+    const getAllExercisesFromLocal = async (): Promise<Exercise[]> => {
+        const SQLite = await import("expo-sqlite");
+        const db = await SQLite.openDatabaseAsync(DB_NAME);
+
+        const data: any[] = await db.getAllAsync(`SELECT * FROM exercise;`);
+
+        return data.map((exercise) => ({
+            exerciseid: exercise.exercise_local_id,
+            musclegroupid: exercise.muscle_group_id,
+            exercisename: exercise.exercise_name,
+            notes: exercise.notes,
+            dateadded: exercise.date_added,
+            dateupdated: null,
+        }));
+    };
     const loadWeightUnits = async () => {
         try {
             const data = await getAllItems<WeightUnit[]>("/weightunit");

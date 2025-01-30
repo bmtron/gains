@@ -50,7 +50,6 @@ const WorkoutHistoryBase = () => {
 
     const getWorkoutData = async (): Promise<WorkoutDto[]> => {
         const workoutHistory = await getAllItems<Workout[]>("/workout");
-        console.log(workoutHistory);
         const workoutDtos = workoutHistory.map((w) => {
             const dto: WorkoutDto = {
                 DateStarted: w.datestarted,
@@ -60,7 +59,6 @@ const WorkoutHistoryBase = () => {
                         es.workoutid === w.workoutid
                 ),
             };
-            console.log(w.datestarted);
             return dto;
         });
         workoutDtos.sort(

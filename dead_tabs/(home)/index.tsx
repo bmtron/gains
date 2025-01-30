@@ -1,17 +1,12 @@
 import { View, StyleSheet, ScrollView } from "react-native";
 import { Text, Card, Button, IconButton } from "react-native-paper";
-import { Link, useFocusEffect } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import { useAppTheme } from "@/app/_layout";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
 import { router } from "expo-router";
 import { FAILED_POST_STORAGE_KEY } from "@/constants/storagekeys";
-import { convert_response_to } from "@/helpers/JsonConverter";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { WorkoutDto } from "@/models/workoutDto";
-import Workout from "@/models/workout";
-import { postWorkout } from "@/data/functions/postWorkout";
 import NotificationModal from "@/components/common/NotificationModal";
 import { ExerciseSetDto } from "@/models/exerciseSetDto";
 import { postWorkoutWithTimeout } from "@/data/functions/postWorkoutWithTimeout";
@@ -19,40 +14,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Index() {
     const theme = useAppTheme();
-    const navigation = useNavigation();
     const [failedData, setFailedData] = useState<WorkoutDto>();
     const [modalMessage, setModalMessage] = useState("");
     const [isModalVisible, setIsModalVisible] = useState(false);
-    useFocusEffect(
-        useCallback(() => {
-            console.log("HIT_ONLOAD_FUNCTION_CALL_");
-            const checkForFailedData = async () => {
-                const failed = await AsyncStorage.getItem(
-                    FAILED_POST_STORAGE_KEY
-                );
-                if (failed !== null && failed != "") {
-                    const data = JSON.parse(failed);
-                    const workoutDto: WorkoutDto = {
-                        DateStarted: new Date(data.DateStarted),
-                        ExerciseSets: data.ExerciseSets.map(
-                            (set: any): ExerciseSetDto => ({
-                                exerciseid: Number(set.exerciseid),
-                                weight: Number(set.weight),
-                                repetitions: Number(set.repetitions),
-                                estimatedrpe: Number(set.estimatedrpe),
-                                weightunitlookupid: Number(
-                                    set.weightunitlookupid
-                                ),
-                            })
-                        ),
-                    };
-                    console.log(workoutDto);
-                    setFailedData(workoutDto);
-                }
-            };
-            checkForFailedData();
-        }, [])
-    );
+
     const styles = StyleSheet.create({
         container: {
             flex: 1,
@@ -148,7 +113,6 @@ export default function Index() {
                     "Previously failed workout data has been successfully uploaded."
                 );
                 setFailedData(undefined);
-                await AsyncStorage.removeItem(FAILED_POST_STORAGE_KEY);
                 return;
             }
             setIsModalVisible(true);

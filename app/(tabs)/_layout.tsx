@@ -1,6 +1,4 @@
 import { Tabs } from "expo-router";
-import { useEffect } from "react";
-import { Platform } from "react-native";
 import { useAppTheme } from "../_layout";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
@@ -8,6 +6,7 @@ export default function TabLayout() {
     const theme = useAppTheme();
     return (
         <Tabs
+            initialRouteName='index'
             screenOptions={{
                 headerShown: false,
                 tabBarStyle: { backgroundColor: theme.colors.background },
@@ -15,7 +14,7 @@ export default function TabLayout() {
             }}
         >
             <Tabs.Screen
-                name='(home)'
+                name='index'
                 options={{
                     title: "Home",
                     tabBarIcon: ({ color, size }) => (
