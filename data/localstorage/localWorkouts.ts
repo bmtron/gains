@@ -17,8 +17,6 @@ export const workoutOperations = {
         const SQLite = await import("expo-sqlite");
         const db = await SQLite.openDatabaseAsync(DB_NAME);
 
-        console.log("WORKOUT_DTO_BELOW");
-        console.log(workout);
         const workoutResult = await db.runAsync(
             `INSERT INTO workout (date_started, workout_server_id, last_modified, is_deleted, is_synced) VALUES (?, ?, ?, ?, ?);`,
             [workout.DateStarted.toISOString(), 0, 0, 0, 0]
@@ -41,7 +39,6 @@ export const workoutOperations = {
                     0,
                 ]
             );
-            console.log(exerciseSetResult);
         });
     },
     getUnsyncedWorkouts: async (): Promise<WorkoutDto[]> => {
@@ -61,8 +58,6 @@ export const workoutOperations = {
                 DateStarted: wr.date_started,
                 ExerciseSets: transformExerciseSetSql(exerciseResultSet),
             };
-            console.log("DTO_");
-            console.log(dto);
             return dto;
         });
 

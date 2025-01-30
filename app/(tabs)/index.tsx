@@ -1,4 +1,4 @@
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView, Platform } from "react-native";
 import { Text, Card, Button, IconButton } from "react-native-paper";
 import { useFocusEffect } from "expo-router";
 import { useAppTheme } from "@/app/_layout";
@@ -11,6 +11,9 @@ import { postWorkoutWithTimeout } from "@/data/functions/postWorkoutWithTimeout"
 import { SafeAreaView } from "react-native-safe-area-context";
 import { initDatabase } from "@/data/localstorage/database";
 import { workoutOperations } from "@/data/localstorage/localWorkouts";
+import getAllItems from "@/data/functions/getAllItems";
+import { Exercise, ExerciseDto } from "@/models/exerciseModels";
+import { DB_NAME } from "@/constants/databaseconstants";
 
 export default function Index() {
     const theme = useAppTheme();
@@ -26,17 +29,60 @@ export default function Index() {
                     setFailedData(failed[0]);
                 }
             };
-            checkForFailedData();
+            if (Platform.OS !== "web") {
+                checkForFailedData();
+            }
         }, [])
     );
     useEffect(() => {
-        const initDb = async () => {
-            //const SQLite = await import("expo-sqlite");
-            //SQLite.deleteDatabaseAsync(DB_NAME);
-            //console.log("DELETED_DB");
-            const testing = await initDatabase();
+        // we can do this here, for now
+        // perhaps need to move this to its own file/section,
+        // and possibly manual triggers for this as well
+        const syncInExercises = async () => {
+            const SQLite = await import("expo-sqlite");
+            const db = await SQLite.openDatabaseAsync(DB_NAME);
+            const data = await getAllItems<Exercise[]>("/exercise");
+            const existingLocalData = await db.getAllAsync(
+                `SELECT * FROM exercise;`
+            );
+
+            const proms = data.map(async (exercise) => {
+                if (
+                    existingLocalData.find(
+                        (item: any) =>
+                            item.exercise_server_id === exercise.exerciseid
+                    ) === undefined
+                ) {
+                    const test = await db.runAsync(
+                        `INSERT INTO exercise (exercise_server_id, muscle_group_id, exercise_name, notes, date_added) VALUES (?, ?, ?, ?, ?);`,
+                        [
+                            exercise.exerciseid,
+                            exercise.musclegroupid,
+                            exercise.exercisename,
+                            exercise.notes,
+                            exercise.dateadded + "",
+                        ]
+                    );
+
+                    return test;
+                }
+            });
+            await Promise.all(proms);
+            console.log("INSERT_END");
         };
-        initDb();
+        const initDb = async () => {
+            await initDatabase();
+        };
+        const deleteDb = async () => {
+            const SQLite = await import("expo-sqlite");
+            await SQLite.deleteDatabaseAsync(DB_NAME);
+            console.log("DELETED_DB");
+        };
+        if (Platform.OS !== "web") {
+            initDb();
+            //deleteDb();
+            syncInExercises();
+        }
     }, []);
     const styles = StyleSheet.create({
         container: {

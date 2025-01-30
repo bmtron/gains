@@ -38,8 +38,8 @@ const initDatabase = async () => {
             muscle_group_id INTEGER NOT NULL,
             exercise_name TEXT NOT NULL,
             notes TEXT NOT NULL,
-            dateadded TEXT NOT NULL,
-            dateupdated TEXT
+            date_added TEXT NOT NULL,
+            date_updated TEXT
         );
         `);
     console.log("RAN_INIT_DB_");

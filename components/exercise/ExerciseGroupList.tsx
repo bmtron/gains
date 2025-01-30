@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, ScrollView, TouchableOpacity } from "react-native";
+import { View, ScrollView, TouchableOpacity, Platform } from "react-native";
 import { TextInput, Button, Text, List, Menu, Card } from "react-native-paper";
 import { useAppTheme } from "@/app/_layout";
 import getAllItems from "@/data/functions/getAllItems";
@@ -9,6 +9,7 @@ import { WeightUnit } from "@/models/weightUnit";
 import { ExerciseGroup } from "@/models/exerciseGroup";
 import { ExerciseSetDto } from "@/models/exerciseSetDto";
 import NotificationModal from "../common/NotificationModal";
+import { DB_NAME } from "@/constants/databaseconstants";
 
 const STORAGE_KEY = "@exercise_groups";
 const HISTORY_STORAGE_KEY = "@exercise_history";
@@ -184,16 +185,42 @@ const ExerciseGroupList = ({
         return result;
     };
     const loadExercises = async () => {
-        try {
-            const data = await getAllItems<Exercise[]>("/exercise");
-            setExercises(data);
-        } catch (error) {
-            console.error("Error loading exercises:", error);
-        } finally {
-            setLoading(false);
+        if (Platform.OS === "web") {
+            try {
+                const data = await getAllItems<Exercise[]>("/exercise");
+                setExercises(data);
+            } catch (error) {
+                console.error("Error loading exercises:", error);
+            } finally {
+                setLoading(false); // do i even use this?
+            }
+        } else {
+            try {
+                const data = await getAllExercisesFromLocal();
+                setExercises(data);
+            } catch (error) {
+                console.error("Error loading exersises from local:", error);
+            } finally {
+                setLoading(false); // do i even use this?
+            }
         }
     };
 
+    const getAllExercisesFromLocal = async (): Promise<Exercise[]> => {
+        const SQLite = await import("expo-sqlite");
+        const db = await SQLite.openDatabaseAsync(DB_NAME);
+
+        const data: any[] = await db.getAllAsync(`SELECT * FROM exercise;`);
+
+        return data.map((exercise) => ({
+            exerciseid: exercise.exercise_local_id,
+            musclegroupid: exercise.muscle_group_id,
+            exercisename: exercise.exercise_name,
+            notes: exercise.notes,
+            dateadded: exercise.date_added,
+            dateupdated: null,
+        }));
+    };
     const loadWeightUnits = async () => {
         try {
             const data = await getAllItems<WeightUnit[]>("/weightunit");
