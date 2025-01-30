@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, ScrollView, TouchableOpacity } from "react-native";
 import { TextInput, Button, Text, List, Menu, Card } from "react-native-paper";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppTheme } from "@/app/_layout";
 import getAllItems from "@/data/functions/getAllItems";
 import { Exercise } from "@/models/exerciseModels";
@@ -34,11 +33,9 @@ const ExerciseGroupList = ({
 }: ExerciseGroupListProps) => {
     const theme = useAppTheme();
 
-    const weightInputRef = useRef(null);
     const [exerciseGroups, setExerciseGroups] = useState<ExerciseGroup[]>([]);
     const [exercises, setExercises] = useState<Exercise[]>([]);
     const [loading, setLoading] = useState(true);
-    const [menuVisible, setMenuVisible] = useState(false);
     const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
         null
     );
@@ -122,17 +119,18 @@ const ExerciseGroupList = ({
         if (clearOldData) {
             setExerciseGroups([]);
             setExercises([]);
-            await AsyncStorage.removeItem(STORAGE_KEY);
-            await AsyncStorage.removeItem(HISTORY_STORAGE_KEY);
+            /* SQLITE IMPLEMENTATION? */
         }
     };
 
     const loadGroups = async () => {
         try {
+            /*
             const stored = await AsyncStorage.getItem(STORAGE_KEY);
             if (stored) {
                 setExerciseGroups(JSON.parse(stored));
-            }
+            }*/
+            // SQLITE IMPLEMENTATION?
         } catch (error) {
             console.error("Error loading groups:", error);
         }
@@ -140,10 +138,11 @@ const ExerciseGroupList = ({
 
     const saveExerciseGroups = async (updatedGroups: ExerciseGroup[]) => {
         try {
-            await AsyncStorage.setItem(
+            /*await AsyncStorage.setItem(
                 STORAGE_KEY,
                 JSON.stringify(updatedGroups)
-            );
+            ); */
+            //SQLITE IMPLEMENTATION?
         } catch (error) {
             console.error("Error saving groups:", error);
         }
