@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import { WorkoutDto } from "@/models/workoutDto";
-import { View, TouchableOpacity, StyleSheet, FlatList } from "react-native";
-import { Exercise, ExerciseDto } from "@/models/exerciseModels";
+import { View, StyleSheet } from "react-native";
+import { Exercise } from "@/models/exerciseModels";
 import { Surface, Text, List } from "react-native-paper";
 import { ScrollView } from "react-native";
 import { useAppTheme } from "@/app/_layout";

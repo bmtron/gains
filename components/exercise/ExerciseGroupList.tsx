@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { View, ScrollView, TouchableOpacity, Platform } from "react-native";
-import { TextInput, Button, Text, List, Menu, Card } from "react-native-paper";
+import { TextInput, Button, List, Menu } from "react-native-paper";
 import { useAppTheme } from "@/app/_layout";
 import getAllItems from "@/data/functions/getAllItems";
 import { Exercise } from "@/models/exerciseModels";
@@ -10,19 +10,8 @@ import { ExerciseGroup } from "@/models/exerciseGroup";
 import { ExerciseSetDto } from "@/models/exerciseSetDto";
 import NotificationModal from "../common/NotificationModal";
 import { DB_NAME } from "@/constants/databaseconstants";
-
-const STORAGE_KEY = "@exercise_groups";
-const HISTORY_STORAGE_KEY = "@exercise_history";
-
-interface HistoricalExerciseSet {
-    exerciseId: number;
-    date: Date | undefined;
-    weightUnit: WeightUnit;
-    weight: number;
-    reps: number;
-    rpe: number;
-    workoutid: number | undefined;
-}
+import HistoricalExerciseSet from "@/models/historicalExerciseSet";
+import ExerciseHistory from "./ExerciseHistory";
 
 interface ExerciseGroupListProps {
     onGroupsChange?: (groups: ExerciseGroup[]) => void;
@@ -338,44 +327,6 @@ const ExerciseGroupList = ({
         setReps("");
         setRpe("");
     };
-    const renderExerciseHistory = (exerciseId: number) => {
-        const history =
-            historicalSets.filter((set) => set.exerciseId === exerciseId) || [];
-        if (history.length === 0) {
-            return (
-                <Card style={{ margin: 8, padding: 8 }}>
-                    <Text>No previous workout data available.</Text>
-                </Card>
-            );
-        }
-        const mostRecentWorkoutId = Math.max(
-            ...history.map((set) => set.workoutid || 0)
-        );
-        const filteredHistoryItems = history
-            .slice(-3)
-            .filter((set) => set.workoutid === mostRecentWorkoutId);
-        return (
-            <View style={{ margin: 8 }}>
-                <Text style={{ fontWeight: "bold" }}>
-                    {filteredHistoryItems[0].date === undefined
-                        ? ""
-                        : new Date(
-                              filteredHistoryItems[0].date
-                          ).toLocaleDateString()}
-                </Text>
-                <Card style={{ marginBottom: 8, padding: 8 }}>
-                    {filteredHistoryItems.map((set, idx) => (
-                        <Text key={idx}>
-                            Set {idx + 1}: {set.weight}
-                            {set.weightUnit.weightunitlabel} x {set.reps} reps
-                            {set.rpe ? ` @ RPE ${set.rpe}` : ""}
-                        </Text>
-                    ))}
-                </Card>
-            </View>
-        );
-    };
-
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
             <NotificationModal
@@ -422,7 +373,10 @@ const ExerciseGroupList = ({
                                 expanded={showHistory}
                                 onPress={() => setShowHistory(!showHistory)}
                             >
-                                {renderExerciseHistory(exercise.exerciseid)}
+                                <ExerciseHistory
+                                    exerciseId={exercise.exerciseid}
+                                    historicalSets={historicalSets}
+                                />
                             </List.Accordion>
                             <Menu
                                 visible={weightUnitMenuVisible}
