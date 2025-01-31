@@ -25,7 +25,6 @@ export default function Index() {
         useCallback(() => {
             const checkForFailedData = async () => {
                 const failed = await databaseOperations.getUnsyncedWorkouts();
-                console.log(failed);
                 if (failed !== null && failed.length > 0) {
                     setFailedData(failed[0]);
                 }

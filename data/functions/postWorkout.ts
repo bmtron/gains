@@ -21,7 +21,6 @@ export async function postWorkout(workout: WorkoutDto) {
         ExerciseSets: workout.ExerciseSets,
     };
 
-    console.log(dtoNoLocal);
     const res = await fetch(endpoint + path, {
         method: "post",
         headers: { "Content-Type": "application/json" },
@@ -29,7 +28,6 @@ export async function postWorkout(workout: WorkoutDto) {
     });
     const resData = await res.json();
 
-    console.log(resData);
     if (resData) {
         return Promise.resolve();
     } else {

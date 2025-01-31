@@ -123,8 +123,6 @@ export const databaseOperations = {
     addExercise: async (exerciseDto: ExerciseDto): Promise<number> => {
         const SQLite = await import("expo-sqlite");
         const db = await SQLite.openDatabaseAsync(DB_NAME);
-        console.log("ADDING_EXERCISE");
-        console.log(exerciseDto);
         try {
             const insertedResult = await db.runAsync(
                 `INSERT INTO exercise (muscle_group_id, exercise_name, notes, date_added, is_synced) VALUES (?, ?, ?, ?, ?);`,
