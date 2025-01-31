@@ -15,13 +15,13 @@ export async function postWorkout(workout: WorkoutDto) {
         : serverAddress;
     const path = "/workout";
 
-    console.log(workout.DateStarted);
     const dtoNoLocal: WorkoutDto = {
+        // ???? I'm afraid to touch this but I don't know why it's here...
         DateStarted: workout.DateStarted,
         ExerciseSets: workout.ExerciseSets,
     };
-    console.log(new Date(workout.DateStarted));
-    console.log(JSON.stringify(dtoNoLocal));
+
+    console.log(dtoNoLocal);
     const res = await fetch(endpoint + path, {
         method: "post",
         headers: { "Content-Type": "application/json" },
@@ -29,6 +29,7 @@ export async function postWorkout(workout: WorkoutDto) {
     });
     const resData = await res.json();
 
+    console.log(resData);
     if (resData) {
         return Promise.resolve();
     } else {

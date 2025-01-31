@@ -23,7 +23,7 @@ const WorkoutItem = ({ workout, exerciseList }: WorkoutItemProps) => {
     };
     const workoutExercises = exerciseList.reduce((acc, set) => {
         const item = workout.ExerciseSets.find(
-            (e) => e.exerciseid === set.exerciseid
+            (e) => e.exerciseserverid === set.exerciseid
         );
 
         if (item !== undefined) {
@@ -47,7 +47,8 @@ const WorkoutItem = ({ workout, exerciseList }: WorkoutItemProps) => {
                             <ScrollView>
                                 {workout.ExerciseSets.filter(
                                     (set) =>
-                                        set.exerciseid === exercise?.exerciseid
+                                        set.exerciseserverid ===
+                                        exercise?.exerciseid
                                 ).map((set, setIndex) => (
                                     <Text
                                         key={setIndex}

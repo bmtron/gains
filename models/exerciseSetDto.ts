@@ -1,5 +1,6 @@
 export interface ExerciseSetDto {
-    exerciseid: number;
+    exerciselocalid: number;
+    exerciseserverid: number;
     weight: number;
     weightunitlookupid: number;
     repetitions: number;

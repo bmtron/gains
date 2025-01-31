@@ -11,6 +11,7 @@ import NotificationModal from "../common/NotificationModal";
 import { FAILED_POST_STORAGE_KEY, STORAGE_KEY } from "@/constants/storagekeys";
 import CustomAppBar from "../global/CustomAppBar";
 import { postWorkoutWithTimeout } from "@/data/functions/postWorkoutWithTimeout";
+import { databaseOperations } from "@/data/localstorage/databaseOperations";
 interface WorkoutData {
     startTime: Date;
     duration: number;

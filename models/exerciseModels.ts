@@ -7,10 +7,12 @@ type Exercise = {
     dateupdated: Date | null;
 };
 
+type ExerciseLocal = Exercise & { exerciseLocalId: number };
 interface ExerciseDto {
+    exerciseLocalId?: number;
     name: string;
     musclegroupid: number;
     notes: string;
 }
 
-export { Exercise, ExerciseDto };
+export { Exercise, ExerciseLocal, ExerciseDto };

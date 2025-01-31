@@ -23,7 +23,8 @@ const initDatabase = async () => {
             weightunit_lookup_id INTEGER NOT NULL,
             repetitions INTEGER NOT NULL,
             estimated_rpe INTEGER NOT NULL,
-            exercise_id INTEGER NOT NULL,
+            exercise_server_id INTEGER NOT NULL,
+            exercise_local_id INTEGER NOT NULL,
             date_added TEXT,
             workout_server_id INTEGER DEFAULT 0,
             workout_local_id INTEGER,
@@ -39,7 +40,10 @@ const initDatabase = async () => {
             exercise_name TEXT NOT NULL,
             notes TEXT NOT NULL,
             date_added TEXT NOT NULL,
-            date_updated TEXT
+            date_updated TEXT,
+            is_synced INTEGER,
+            last_modified TIMESTAMP,
+            is_deleted INTEGER
         );
         `);
     console.log("RAN_INIT_DB_");

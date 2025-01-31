@@ -3,7 +3,7 @@ import { View, ScrollView, TouchableOpacity, Platform } from "react-native";
 import { TextInput, Button, List, Menu } from "react-native-paper";
 import { useAppTheme } from "@/app/_layout";
 import getAllItems from "@/data/functions/getAllItems";
-import { Exercise } from "@/models/exerciseModels";
+import { Exercise, ExerciseLocal } from "@/models/exerciseModels";
 import CustomDropdown from "../global/CustomDropdown";
 import { WeightUnit } from "@/models/weightUnit";
 import { ExerciseGroup } from "@/models/exerciseGroup";
@@ -24,11 +24,10 @@ const ExerciseGroupList = ({
     const theme = useAppTheme();
 
     const [exerciseGroups, setExerciseGroups] = useState<ExerciseGroup[]>([]);
-    const [exercises, setExercises] = useState<Exercise[]>([]);
+    const [exercises, setExercises] = useState<ExerciseLocal[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
-        null
-    );
+    const [selectedExercise, setSelectedExercise] =
+        useState<ExerciseLocal | null>(null);
     const [weight, setWeight] = useState("");
     const [reps, setReps] = useState("");
     const [rpe, setRpe] = useState("");
@@ -159,7 +158,7 @@ const ExerciseGroupList = ({
             );
             const temp: HistoricalExerciseSet = {
                 workoutid: set.workoutid,
-                exerciseId: set.exerciseid,
+                exerciseId: set.exerciseserverid,
                 date: set.dateadded,
                 weight: set.weight,
                 weightUnit: weightUnits.filter(
@@ -177,7 +176,18 @@ const ExerciseGroupList = ({
         if (Platform.OS === "web") {
             try {
                 const data = await getAllItems<Exercise[]>("/exercise");
-                setExercises(data);
+                const localMap: ExerciseLocal[] = data.map((e) => {
+                    return {
+                        exerciseLocalId: e.exerciseid, // this could potentially cause problems...that I'm too tired to think of right now
+                        exerciseid: e.exerciseid,
+                        musclegroupid: e.musclegroupid,
+                        exercisename: e.exercisename,
+                        notes: e.notes,
+                        dateadded: e.dateadded,
+                        dateupdated: null,
+                    };
+                });
+                setExercises(localMap);
             } catch (error) {
                 console.error("Error loading exercises:", error);
             } finally {
@@ -195,14 +205,15 @@ const ExerciseGroupList = ({
         }
     };
 
-    const getAllExercisesFromLocal = async (): Promise<Exercise[]> => {
+    const getAllExercisesFromLocal = async (): Promise<ExerciseLocal[]> => {
         const SQLite = await import("expo-sqlite");
         const db = await SQLite.openDatabaseAsync(DB_NAME);
 
         const data: any[] = await db.getAllAsync(`SELECT * FROM exercise;`);
 
         return data.map((exercise) => ({
-            exerciseid: exercise.exercise_local_id,
+            exerciseLocalId: exercise.exercise_local_id,
+            exerciseid: exercise.exercise_server_id,
             musclegroupid: exercise.muscle_group_id,
             exercisename: exercise.exercise_name,
             notes: exercise.notes,
@@ -219,20 +230,22 @@ const ExerciseGroupList = ({
         }
     };
 
-    const handleAddExerciseGroupNoButton = async (exerciseId: number) => {
+    const handleAddExerciseGroupNoButton = async (exerciseLocalId: number) => {
         const selectedExerciseData = exercises.find(
-            (ex) => ex.exerciseid === exerciseId
+            (ex) => ex.exerciseLocalId === exerciseLocalId
         );
         if (!selectedExerciseData) return;
         if (
             exerciseGroups.find(
                 (exercise) =>
-                    exercise.exerciseid === selectedExerciseData.exerciseid
+                    exercise.exerciselocalid ===
+                    selectedExerciseData.exerciseLocalId
             ) !== undefined
         ) {
             const existingExerciseGroup = exerciseGroups.find(
                 (exercise) =>
-                    exercise.exerciseid === selectedExerciseData.exerciseid
+                    exercise.exerciselocalid ===
+                    selectedExerciseData.exerciseLocalId
             );
             if (existingExerciseGroup !== undefined) {
                 setExpandedGroup(existingExerciseGroup.name);
@@ -248,6 +261,7 @@ const ExerciseGroupList = ({
             ...exerciseGroups,
             {
                 exerciseid: selectedExerciseData.exerciseid,
+                exerciselocalid: selectedExerciseData.exerciseLocalId,
                 name: selectedExerciseData.exercisename,
                 sets: [],
                 weightUnit: defaultWeightUnit,
@@ -278,7 +292,6 @@ const ExerciseGroupList = ({
     const handleAddSet = async (groupName: string) => {
         const group = exerciseGroups.find((g) => g.name === groupName);
         if (group === undefined) return;
-        console.log(group.weightUnit);
         if (!group.weightUnit) {
             setModalVisible(true);
             setModalMessage(
@@ -297,7 +310,8 @@ const ExerciseGroupList = ({
             return;
         }
         const newSet: ExerciseSetDto = {
-            exerciseid: group?.exerciseid,
+            exerciselocalid: group?.exerciselocalid,
+            exerciseserverid: group?.exerciseid,
             weight: parseFloat(weight),
             repetitions: parseInt(reps),
             estimatedrpe: rpe ? parseFloat(rpe) : 0,
@@ -342,7 +356,7 @@ const ExerciseGroupList = ({
                         options={exercises}
                         onSelect={async (exercise) => {
                             await handleAddExerciseGroupNoButton(
-                                exercise.exerciseid
+                                exercise.exerciseLocalId
                             );
                             setExpandedGroup(exercise.exercisename);
                         }}

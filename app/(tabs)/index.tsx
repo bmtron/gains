@@ -10,10 +10,11 @@ import NotificationModal from "@/components/common/NotificationModal";
 import { postWorkoutWithTimeout } from "@/data/functions/postWorkoutWithTimeout";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { initDatabase } from "@/data/localstorage/database";
-import { workoutOperations } from "@/data/localstorage/localWorkouts";
-import getAllItems from "@/data/functions/getAllItems";
-import { Exercise, ExerciseDto } from "@/models/exerciseModels";
+import { databaseOperations } from "@/data/localstorage/databaseOperations";
 import { DB_NAME } from "@/constants/databaseconstants";
+import FailureBanner from "@/components/common/FailureBanner";
+import { ExerciseSetDto } from "@/models/exerciseSetDto";
+import { setExerciseDataServerId } from "@/data/functions/setExerciseDataServerId";
 
 export default function Index() {
     const theme = useAppTheme();
@@ -23,7 +24,7 @@ export default function Index() {
     useFocusEffect(
         useCallback(() => {
             const checkForFailedData = async () => {
-                const failed = await workoutOperations.getUnsyncedWorkouts();
+                const failed = await databaseOperations.getUnsyncedWorkouts();
                 console.log(failed);
                 if (failed !== null && failed.length > 0) {
                     setFailedData(failed[0]);
@@ -39,36 +40,7 @@ export default function Index() {
         // perhaps need to move this to its own file/section,
         // and possibly manual triggers for this as well
         const syncInExercises = async () => {
-            const SQLite = await import("expo-sqlite");
-            const db = await SQLite.openDatabaseAsync(DB_NAME);
-            const data = await getAllItems<Exercise[]>("/exercise");
-            const existingLocalData = await db.getAllAsync(
-                `SELECT * FROM exercise;`
-            );
-
-            const proms = data.map(async (exercise) => {
-                if (
-                    existingLocalData.find(
-                        (item: any) =>
-                            item.exercise_server_id === exercise.exerciseid
-                    ) === undefined
-                ) {
-                    const test = await db.runAsync(
-                        `INSERT INTO exercise (exercise_server_id, muscle_group_id, exercise_name, notes, date_added) VALUES (?, ?, ?, ?, ?);`,
-                        [
-                            exercise.exerciseid,
-                            exercise.musclegroupid,
-                            exercise.exercisename,
-                            exercise.notes,
-                            exercise.dateadded + "",
-                        ]
-                    );
-
-                    return test;
-                }
-            });
-            await Promise.all(proms);
-            console.log("INSERT_END");
+            await databaseOperations.syncInExercises();
         };
         const initDb = async () => {
             await initDatabase();
@@ -84,99 +56,19 @@ export default function Index() {
             syncInExercises();
         }
     }, []);
-    const styles = StyleSheet.create({
-        container: {
-            flex: 1,
-            backgroundColor: theme.colors.background,
-            padding: 16,
-        },
-        header: {
-            marginVertical: 24,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-        },
-        welcomeText: {
-            fontSize: 28,
-            fontWeight: "bold",
-            color: theme.colors.primary,
-        },
-        subtitle: {
-            fontSize: 16,
-            color: theme.colors.secondary,
-            marginBottom: 24,
-        },
-        cardContainer: {
-            marginBottom: 16,
-        },
-        card: {
-            marginBottom: 12,
-            borderRadius: 12,
-        },
-        cardContent: {
-            padding: 16,
-        },
-        cardTitle: {
-            fontSize: 18,
-            fontWeight: "600",
-            marginBottom: 8,
-        },
-        cardDescription: {
-            fontSize: 14,
-            color: theme.colors.secondary,
-            marginBottom: 16,
-        },
-        linkButton: {
-            borderRadius: 8,
-        },
-        stats: {
-            flexDirection: "row",
-            justifyContent: "space-between",
-            marginBottom: 24,
-            padding: 16,
-            backgroundColor: theme.colors.primaryContainer,
-            borderRadius: 12,
-        },
-        statItem: {
-            alignItems: "center",
-        },
-        statValue: {
-            fontSize: 24,
-            fontWeight: "bold",
-            color: theme.colors.primary,
-        },
-        statLabel: {
-            fontSize: 12,
-            color: theme.colors.secondary,
-        },
-        alertBanner: {
-            backgroundColor: theme.colors.error,
-            padding: 16,
-            marginHorizontal: 16,
-            marginTop: 16,
-            borderRadius: 8,
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-        },
-        alertText: {
-            color: theme.colors.surface,
-            flex: 1,
-            marginRight: 8,
-        },
-        retryButton: {
-            backgroundColor: theme.colors.surface,
-            color: theme.colors.paperWhite,
-        },
-    });
 
     const handleRetrySync = async () => {
         if (failedData !== undefined) {
+            console.log(failedData.ExerciseSets);
+            failedData.ExerciseSets = await setExerciseDataServerId(
+                failedData.ExerciseSets
+            );
+            console.log(failedData.ExerciseSets);
             const result = await postWorkoutWithTimeout(failedData, true);
             if (result) {
                 setIsModalVisible(true);
                 if (failedData.WorkoutLocalId !== undefined) {
-                    await workoutOperations.markWorkoutDataSynced(
+                    await databaseOperations.markWorkoutDataSynced(
                         failedData.WorkoutLocalId
                     );
                 } else {
@@ -210,19 +102,11 @@ export default function Index() {
                     message={modalMessage}
                 />
                 {failedData && (
-                    <View style={styles.alertBanner}>
-                        <Text style={styles.alertText}>
-                            A workout(s) failed to sync with server
-                        </Text>
-                        <Button
-                            mode='contained'
-                            onPress={handleRetrySync}
-                            style={styles.retryButton}
-                            textColor={theme.colors.paperWhite}
-                        >
-                            Retry Sync
-                        </Button>
-                    </View>
+                    <FailureBanner
+                        alertText='A workout(s) failed to sync with server'
+                        buttonText='Retry Sync'
+                        buttonCallback={handleRetrySync}
+                    />
                 )}
                 <View style={styles.header}>
                     <Text style={styles.welcomeText}>Ready to Train?</Text>
@@ -353,3 +237,89 @@ export default function Index() {
         </SafeAreaView>
     );
 }
+const theme = useAppTheme();
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+        padding: 16,
+    },
+    header: {
+        marginVertical: 24,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+    },
+    welcomeText: {
+        fontSize: 28,
+        fontWeight: "bold",
+        color: theme.colors.primary,
+    },
+    subtitle: {
+        fontSize: 16,
+        color: theme.colors.secondary,
+        marginBottom: 24,
+    },
+    cardContainer: {
+        marginBottom: 16,
+    },
+    card: {
+        marginBottom: 12,
+        borderRadius: 12,
+    },
+    cardContent: {
+        padding: 16,
+    },
+    cardTitle: {
+        fontSize: 18,
+        fontWeight: "600",
+        marginBottom: 8,
+    },
+    cardDescription: {
+        fontSize: 14,
+        color: theme.colors.secondary,
+        marginBottom: 16,
+    },
+    linkButton: {
+        borderRadius: 8,
+    },
+    stats: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        marginBottom: 24,
+        padding: 16,
+        backgroundColor: theme.colors.primaryContainer,
+        borderRadius: 12,
+    },
+    statItem: {
+        alignItems: "center",
+    },
+    statValue: {
+        fontSize: 24,
+        fontWeight: "bold",
+        color: theme.colors.primary,
+    },
+    statLabel: {
+        fontSize: 12,
+        color: theme.colors.secondary,
+    },
+    alertBanner: {
+        backgroundColor: theme.colors.error,
+        padding: 16,
+        marginHorizontal: 16,
+        marginTop: 16,
+        borderRadius: 8,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+    alertText: {
+        color: theme.colors.surface,
+        flex: 1,
+        marginRight: 8,
+    },
+    retryButton: {
+        backgroundColor: theme.colors.surface,
+        color: theme.colors.paperWhite,
+    },
+});
