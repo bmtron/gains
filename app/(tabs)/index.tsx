@@ -41,6 +41,9 @@ export default function Index() {
         const syncInExercises = async () => {
             await databaseOperations.syncInExercises();
         };
+        const syncInWeightUnits = async () => {
+            await databaseOperations.syncInWeightUnits();
+        };
         const initDb = async () => {
             await initDatabase();
         };
@@ -53,6 +56,7 @@ export default function Index() {
             initDb();
             //deleteDb();
             syncInExercises();
+            syncInWeightUnits();
         }
     }, []);
 

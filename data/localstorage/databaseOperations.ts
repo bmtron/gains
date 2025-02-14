@@ -3,6 +3,7 @@ import { Exercise, ExerciseDto, ExerciseLocal } from "@/models/exerciseModels";
 import { ExerciseSetDto } from "@/models/exerciseSetDto";
 import { WorkoutDto } from "@/models/workoutDto";
 import getAllItems from "../functions/getAllItems";
+import { WeightUnit } from "@/models/weightUnit";
 
 const transformExerciseSetSql = (sets: any[]): ExerciseSetDto[] => {
     return sets.map((set) => ({
@@ -102,23 +103,62 @@ export const databaseOperations = {
                         item.exercise_server_id === exercise.exerciseid
                 ) === undefined
             ) {
-                const test = await db.runAsync(
+                const local_exercise = await db.runAsync(
                     `INSERT INTO exercise (exercise_server_id, muscle_group_id, exercise_name, notes, date_added, is_synced) VALUES (?, ?, ?, ?, ?, ?);`,
                     [
                         exercise.exerciseid,
                         exercise.musclegroupid,
                         exercise.exercisename,
                         exercise.notes,
-                        exercise.dateadded + "",
+                        exercise.dateadded + "", // coerces value to string
                         1,
                     ]
                 );
 
-                return test;
+                return local_exercise;
             }
         });
         await Promise.all(proms);
         console.log("INSERT_END");
+    },
+    syncInWeightUnits: async () => {
+        const SQLite = await import("expo-sqlite");
+        const db = await SQLite.openDatabaseAsync(DB_NAME);
+        const data = await getAllItems<WeightUnit[]>("/weightunit");
+        const existingLocalData = await db.getAllAsync(
+            `SELECT        
+            weight_unit_local_id,
+            weight_unit_lookup_id,
+            weight_unit_name,
+            weight_unit_label,
+            is_synced,
+            last_modified,
+            is_deleted
+            FROM weightunitlookup;`
+        );
+        const promises = data.map(async (wul) => {
+            if (
+                existingLocalData.find(
+                    (item: any) =>
+                        item.weight_unit_lookup_id == wul.weightunitlookupid
+                ) === undefined
+            ) {
+                const local_wul = await db.runAsync(
+                    `INSERT INTO weightunitlookup (weight_unit_lookup_id, weight_unit_name, weight_unit_label, is_synced, last_modified, is_deleted) VALUES (?, ?, ?, ?, ?, ?);`,
+                    [
+                        wul.weightunitlookupid,
+                        wul.weightunitname,
+                        wul.weightunitlabel,
+                        1,
+                        new Date().toISOString(),
+                        0,
+                    ]
+                );
+                return local_wul;
+            }
+        });
+        await Promise.all(promises);
+        console.log("WEIGHT_UNIT_INSERT_END");
     },
     addExercise: async (exerciseDto: ExerciseDto): Promise<number> => {
         const SQLite = await import("expo-sqlite");
@@ -196,6 +236,29 @@ export const databaseOperations = {
                     dateupdated: null,
                 };
             });
+            const promises = await Promise.all(resultMap);
+            return promises;
+        } catch (error) {
+            console.error(error);
+        }
+        return [];
+    },
+
+    getAllWeightUnitLookups: async (): Promise<WeightUnit[]> => {
+        const SQLite = await import("expo-sqlite");
+        const db = await SQLite.openDatabaseAsync(DB_NAME);
+        try {
+            const result = await db.getAllAsync(
+                "SELECT * FROM weightunitlookup;"
+            );
+            const resultMap = result.map((res: any) => {
+                return {
+                    weightunitlookupid: res.weight_unit_lookup_id,
+                    weightunitname: res.weight_unit_name,
+                    weightunitlabel: res.weight_unit_label,
+                };
+            });
+
             const promises = await Promise.all(resultMap);
             return promises;
         } catch (error) {

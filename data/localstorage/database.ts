@@ -46,6 +46,20 @@ const initDatabase = async () => {
             is_deleted INTEGER
         );
         `);
+    // await db.execAsync(`
+    //             DROP TABLE weightunitlookup
+    //         `);
+    await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS weightunitlookup (
+            weight_unit_local_id INTEGER PRIMARY KEY NOT NULL,
+            weight_unit_lookup_id INTEGER NOT NULL,
+            weight_unit_name TEXT NOT NULL,
+            weight_unit_label TEXT NOT NULL,
+            is_synced INTEGER,
+            last_modified TIMESTAMP,
+            is_deleted INTEGER
+        );
+        `);
     console.log("RAN_INIT_DB_");
 };
 export { initDatabase };

@@ -12,6 +12,7 @@ import NotificationModal from "../common/NotificationModal";
 import { DB_NAME } from "@/constants/databaseconstants";
 import HistoricalExerciseSet from "@/models/historicalExerciseSet";
 import ExerciseHistory from "./ExerciseHistory";
+import { databaseOperations } from "@/data/localstorage/databaseOperations";
 
 interface ExerciseGroupListProps {
     onGroupsChange?: (groups: ExerciseGroup[]) => void;
@@ -42,7 +43,6 @@ const ExerciseGroupList = ({
     const [exercisesLoaded, setExercisesLoaded] = useState(false);
     const [groupsLoaded, setGroupsLoaded] = useState(false);
     const [weightUnitsLoaded, setWeightUnitsLoaded] = useState(false);
-    const [weightInputValue, setWeightInputValue] = useState("");
     const [modalVisible, setModalVisible] = useState(false);
     const [modalMessage, setModalMessage] = useState("NO_MESSAGE_SET_");
 
@@ -79,7 +79,7 @@ const ExerciseGroupList = ({
 
         const loadWeightData = async () => {
             try {
-                await loadWeightUnits();
+                await loadWeightUnitsFromLocal();
                 setWeightUnitsLoaded(true);
             } catch (error) {
                 console.error("Error loading weight units:", error);
@@ -221,12 +221,14 @@ const ExerciseGroupList = ({
             dateupdated: null,
         }));
     };
-    const loadWeightUnits = async () => {
+
+    const loadWeightUnitsFromLocal = async () => {
         try {
-            const data = await getAllItems<WeightUnit[]>("/weightunit");
+            const data = await databaseOperations.getAllWeightUnitLookups();
+            console.log(data);
             setWeightUnits(data);
         } catch (error) {
-            console.error("Error loading weight units:", error);
+            console.log("Error setting weight units: " + error);
         }
     };
 
