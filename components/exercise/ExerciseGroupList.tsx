@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { View, ScrollView, TouchableOpacity, Platform } from "react-native";
+import {
+    View,
+    ScrollView,
+    TouchableOpacity,
+    Platform,
+    KeyboardAvoidingView,
+} from "react-native";
 import { TextInput, Button, List, Menu } from "react-native-paper";
 import { useAppTheme } from "@/app/_layout";
 import getAllItems from "@/data/functions/getAllItems";
@@ -344,7 +350,9 @@ const ExerciseGroupList = ({
         setRpe("");
     };
     return (
-        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <KeyboardAvoidingView
+            style={{ flex: 1, backgroundColor: theme.colors.background }}
+        >
             <NotificationModal
                 isVisible={modalVisible}
                 setModalVisibile={setModalVisible}
@@ -501,7 +509,7 @@ const ExerciseGroupList = ({
                     ))}
                 </View>
             </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
     );
 };
 
