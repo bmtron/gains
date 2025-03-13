@@ -16,6 +16,7 @@ import PaddedView from "../global/PaddedView";
 import { databaseOperations } from "@/data/localstorage/databaseOperations";
 import { useFocusEffect } from "expo-router";
 import FailureBanner from "../common/FailureBanner";
+import { retryExerciseAdd } from "@/helpers/retryExerciseAdd";
 
 const ExerciseInloader = () => {
     const theme = useAppTheme();
@@ -55,23 +56,16 @@ const ExerciseInloader = () => {
     // (it doesn't exist on the server)
     // will have to circle back at some point and address this,
     // for now, just workaround it by not adding workouts with unsynced exercises.
+
+    // Update: I think this should just...work? If we can't reach the server,
+    // we add it locally, then set the data...and once we get a positive
+    // result from the server, we update the local record with the correct server id.
+    // We should run this before submitting a workout though...
     const retryExerciseSync = async () => {
-        const results = unsyncedExercises.map(async (exercise) => {
-            const serverResult = await postExerciseWithResult(exercise);
-            const localUpdate =
-                await databaseOperations.updateExerciseWithServerId(
-                    serverResult,
-                    exercise.exerciseLocalId!
-                );
-            if (serverResult !== -1 && localUpdate) {
-                return true;
-            } else {
-                return false;
-            }
-        });
-        const res = await Promise.all(results);
-        if (res.find((result) => !result) === undefined) {
-            // if none of the results are false
+        const results = await retryExerciseAdd(unsyncedExercises);
+        // const res = await Promise.all(results);
+        if (results) {
+            // if the retry succeeded...then all unsynced exercises have been synced
             setHasUnsyncedExercises(false);
             setUnsyncedExercises([]);
         }
@@ -132,6 +126,27 @@ const ExerciseInloader = () => {
         );
     };
 
+    const postExerciseWithTimeout = async (
+        dto: ExerciseDto,
+        timeoutMs: number = 10000
+    ): Promise<number> => {
+        const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error("Request timeout")), timeoutMs);
+        });
+
+        try {
+            // Race the actual request against the timeout
+            const result = await Promise.race([
+                postExerciseWithResult(dto),
+                timeoutPromise,
+            ]);
+            return result as number;
+        } catch (error) {
+            console.error("Request failed or timed out:", error);
+            return -1;
+        }
+    };
+
     async function submit() {
         if (selectedMuscleGroup === undefined) {
             setDialogTitle("Invalid Muscle Group Id");
@@ -156,7 +171,8 @@ const ExerciseInloader = () => {
             showErrorDialog();
             return;
         }
-        const resultServerId = -1; //await postExerciseWithResult(dto);
+        let resultServerId = -1;
+        resultServerId = await postExerciseWithTimeout(dto);
 
         if (resultServerId === -1) {
             setDialogTitle("Error Submitting Exercise");

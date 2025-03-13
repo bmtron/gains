@@ -33,6 +33,7 @@ export async function postExerciseWithResult(
             : serverAddressDebug
         : serverAddress;
     const path = "/exercise/new";
+
     const res = await fetch(endpoint + path, {
         method: "post",
         headers: { "Content-Type": "application/json" },
