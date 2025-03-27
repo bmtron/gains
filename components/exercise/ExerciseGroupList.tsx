@@ -231,7 +231,6 @@ const ExerciseGroupList = ({
     const loadWeightUnitsFromLocal = async () => {
         try {
             const data = await databaseOperations.getAllWeightUnitLookups();
-            console.log(data);
             setWeightUnits(data);
         } catch (error) {
             console.log("Error setting weight units: " + error);

@@ -1,6 +1,6 @@
 import React from "react";
-import InloadBase from "@/components/inload/inloadbase";
+import ExerciseManagementBase from "@/components/exercisemanagement/ExerciseManagementBase";
 
 export default function InloadIndex() {
-    return <InloadBase />;
+    return <ExerciseManagementBase />;
 }

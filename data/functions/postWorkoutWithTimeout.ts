@@ -20,7 +20,6 @@ export const postWorkoutWithTimeout = async (
         return true;
     } catch (error) {
         console.error(error);
-        console.log("here?");
         if (!isRetry) {
             await databaseOperations.addWorkout(workoutDto);
         }
