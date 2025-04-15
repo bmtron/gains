@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
     View,
     ScrollView,
@@ -19,6 +19,9 @@ import { DB_NAME } from "@/constants/databaseconstants";
 import HistoricalExerciseSet from "@/models/historicalExerciseSet";
 import ExerciseHistory from "./ExerciseHistory";
 import { databaseOperations } from "@/data/localstorage/databaseOperations";
+import { useFocusEffect } from "expo-router";
+import { update } from "lodash";
+import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 
 interface ExerciseGroupListProps {
     onGroupsChange?: (groups: ExerciseGroup[]) => void;
@@ -52,17 +55,19 @@ const ExerciseGroupList = ({
     const [modalVisible, setModalVisible] = useState(false);
     const [modalMessage, setModalMessage] = useState("NO_MESSAGE_SET_");
 
-    useEffect(() => {
-        const loadInitialData = async () => {
-            try {
-                await loadExercises();
-                setExercisesLoaded(true);
-            } catch (error) {
-                console.error("Error loading exercises:", error);
-            }
-        };
-        loadInitialData();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            const loadInitialData = async () => {
+                try {
+                    await loadExercises();
+                    setExercisesLoaded(true);
+                } catch (error) {
+                    console.error("Error loading exercises:", error);
+                }
+            };
+            loadInitialData();
+        }, [])
+    );
 
     // Second useEffect - Load groups after exercises
     useEffect(() => {
@@ -296,6 +301,20 @@ const ExerciseGroupList = ({
         await saveExerciseGroups(updatedExerciseGroups);
     };
 
+    const handleRemoveExercise = async (group: ExerciseGroup) => {
+        const updatedExerciseGroups = exerciseGroups.filter(
+            (g) => g.name !== group.name
+        );
+
+        console.log(updatedExerciseGroups);
+
+        if (onGroupsChange) {
+            onGroupsChange(updatedExerciseGroups);
+        }
+        setExerciseGroups(updatedExerciseGroups);
+        await saveExerciseGroups(updatedExerciseGroups);
+    };
+
     const handleAddSet = async (groupName: string) => {
         const group = exerciseGroups.find((g) => g.name === groupName);
         if (group === undefined) return;
@@ -373,138 +392,173 @@ const ExerciseGroupList = ({
                         placeholder='Select Exercise'
                     />
 
-                    {exerciseGroups.map((exercise) => (
-                        <List.Accordion
-                            key={exercise.name}
-                            title={`${exercise.name} ${
-                                exercise.weightUnit
-                                    ? `(${exercise.weightUnit.weightunitlabel})`
-                                    : ""
-                            }`}
-                            expanded={expandedGroup === exercise.name}
-                            onPress={() =>
-                                setExpandedGroup(
-                                    expandedGroup === exercise.name
-                                        ? null
-                                        : exercise.name
+                    {exerciseGroups.map((exercise, index) => (
+                        <Swipeable
+                            key={index}
+                            renderRightActions={() =>
+                                expandedGroup !== exercise.name && (
+                                    <TouchableOpacity
+                                        style={{
+                                            display: "flex",
+                                            justifyContent: "center",
+                                            alignItems: "center",
+                                            backgroundColor: "red",
+                                            width: 75,
+                                        }}
+                                        onPress={(e) => {
+                                            console.log("onPress");
+                                            e.stopPropagation();
+                                            handleRemoveExercise(exercise);
+                                        }}
+                                    >
+                                        <List.Icon icon='delete' />
+                                    </TouchableOpacity>
                                 )
                             }
                         >
-                            {/* Add Historical Performance Section */}
                             <List.Accordion
-                                title='Previous Workout Data'
-                                expanded={showHistory}
-                                onPress={() => setShowHistory(!showHistory)}
-                            >
-                                <ExerciseHistory
-                                    exerciseId={exercise.exerciseid}
-                                    historicalSets={historicalSets}
-                                />
-                            </List.Accordion>
-                            <Menu
-                                visible={weightUnitMenuVisible}
-                                theme={theme}
-                                onDismiss={() => {
-                                    setExerciseGroups(exerciseGroups);
-                                    setWeightUnitMenuVisible(false);
-                                }}
-                                anchor={
-                                    <Button
-                                        onPress={() => {
-                                            setWeightUnitMenuVisible(true);
-                                        }}
-                                    >
-                                        {exercise.weightUnit?.weightunitname ||
-                                            "Select Weight Unit"}
-                                    </Button>
+                                key={exercise.name}
+                                title={`${exercise.name} ${
+                                    exercise.weightUnit
+                                        ? `(${exercise.weightUnit.weightunitlabel})`
+                                        : ""
+                                }`}
+                                expanded={expandedGroup === exercise.name}
+                                onPress={() =>
+                                    setExpandedGroup(
+                                        expandedGroup === exercise.name
+                                            ? null
+                                            : exercise.name
+                                    )
                                 }
                             >
-                                {weightUnits.map((unit) => (
-                                    <Menu.Item
-                                        key={unit.weightunitlookupid}
-                                        onPress={() => {
-                                            const updatedGroups =
-                                                exerciseGroups.map((g) =>
-                                                    g.name === exercise.name
-                                                        ? {
-                                                              ...g,
-                                                              weightUnit: unit,
-                                                          }
-                                                        : g
-                                                );
-                                            setExerciseGroups(updatedGroups);
-                                            setWeightUnitMenuVisible(false);
-                                        }}
-                                        title={unit.weightunitname}
-                                    />
-                                ))}
-                            </Menu>
-
-                            {exercise.sets.map((set, index) => (
-                                <List.Item
-                                    key={index}
-                                    title={`Set ${index + 1}`}
-                                    description={`Weight: ${set.weight}${
-                                        exercise.weightUnit?.weightunitlabel ||
-                                        ""
-                                    }, Reps: ${set.repetitions}${
-                                        set.estimatedrpe
-                                            ? `, RPE: ${set.estimatedrpe}`
-                                            : ""
-                                    }`}
-                                    right={(props) => (
-                                        <TouchableOpacity
-                                            onPress={() =>
-                                                handleRemoveSet(index, exercise)
-                                            }
-                                        >
-                                            <List.Icon
-                                                {...props}
-                                                icon='delete'
-                                            />
-                                        </TouchableOpacity>
-                                    )}
-                                />
-                            ))}
-
-                            <View style={{ padding: 8 }}>
-                                <List.Accordion title='New Set...'>
-                                    <TextInput
-                                        placeholder={
-                                            "Weight (" +
-                                            exercise.weightUnit
-                                                ?.weightunitlabel +
-                                            ")"
-                                        }
-                                        value={weight}
-                                        keyboardType='numeric'
-                                        textContentType='none'
-                                        onChangeText={(text) => setWeight(text)}
-                                        style={{ marginBottom: 8 }}
-                                    />
-                                    <TextInput
-                                        label='Repetitions'
-                                        value={reps}
-                                        onChangeText={setReps}
-                                        keyboardType='numeric'
-                                        style={{ marginBottom: 8 }}
-                                    />
-                                    <TextInput
-                                        label='RPE (optional)'
-                                        value={rpe}
-                                        onChangeText={setRpe}
-                                        keyboardType='numeric'
-                                        style={{ marginBottom: 8 }}
+                                {/* Add Historical Performance Section */}
+                                <List.Accordion
+                                    title='Previous Workout Data'
+                                    expanded={showHistory}
+                                    onPress={() => setShowHistory(!showHistory)}
+                                >
+                                    <ExerciseHistory
+                                        exerciseId={exercise.exerciseid}
+                                        historicalSets={historicalSets}
                                     />
                                 </List.Accordion>
-                                <Button
-                                    mode='contained'
-                                    onPress={() => handleAddSet(exercise.name)}
+                                <Menu
+                                    visible={weightUnitMenuVisible}
+                                    theme={theme}
+                                    onDismiss={() => {
+                                        setExerciseGroups(exerciseGroups);
+                                        setWeightUnitMenuVisible(false);
+                                    }}
+                                    anchor={
+                                        <Button
+                                            onPress={() => {
+                                                setWeightUnitMenuVisible(true);
+                                            }}
+                                        >
+                                            {exercise.weightUnit
+                                                ?.weightunitname ||
+                                                "Select Weight Unit"}
+                                        </Button>
+                                    }
                                 >
-                                    Add Set
-                                </Button>
-                            </View>
-                        </List.Accordion>
+                                    {weightUnits.map((unit) => (
+                                        <Menu.Item
+                                            key={unit.weightunitlookupid}
+                                            onPress={() => {
+                                                const updatedGroups =
+                                                    exerciseGroups.map((g) =>
+                                                        g.name === exercise.name
+                                                            ? {
+                                                                  ...g,
+                                                                  weightUnit:
+                                                                      unit,
+                                                              }
+                                                            : g
+                                                    );
+                                                setExerciseGroups(
+                                                    updatedGroups
+                                                );
+                                                setWeightUnitMenuVisible(false);
+                                            }}
+                                            title={unit.weightunitname}
+                                        />
+                                    ))}
+                                </Menu>
+
+                                {exercise.sets.map((set, index) => (
+                                    <List.Item
+                                        key={index}
+                                        title={`Set ${index + 1}`}
+                                        description={`Weight: ${set.weight}${
+                                            exercise.weightUnit
+                                                ?.weightunitlabel || ""
+                                        }, Reps: ${set.repetitions}${
+                                            set.estimatedrpe
+                                                ? `, RPE: ${set.estimatedrpe}`
+                                                : ""
+                                        }`}
+                                        right={(props) => (
+                                            <TouchableOpacity
+                                                onPress={() =>
+                                                    handleRemoveSet(
+                                                        index,
+                                                        exercise
+                                                    )
+                                                }
+                                            >
+                                                <List.Icon
+                                                    {...props}
+                                                    icon='delete'
+                                                />
+                                            </TouchableOpacity>
+                                        )}
+                                    />
+                                ))}
+
+                                <View style={{ padding: 8 }}>
+                                    <List.Accordion title='New Set...'>
+                                        <TextInput
+                                            placeholder={
+                                                "Weight (" +
+                                                exercise.weightUnit
+                                                    ?.weightunitlabel +
+                                                ")"
+                                            }
+                                            value={weight}
+                                            keyboardType='numeric'
+                                            textContentType='none'
+                                            onChangeText={(text) =>
+                                                setWeight(text)
+                                            }
+                                            style={{ marginBottom: 8 }}
+                                        />
+                                        <TextInput
+                                            label='Repetitions'
+                                            value={reps}
+                                            onChangeText={setReps}
+                                            keyboardType='numeric'
+                                            style={{ marginBottom: 8 }}
+                                        />
+                                        <TextInput
+                                            label='RPE (optional)'
+                                            value={rpe}
+                                            onChangeText={setRpe}
+                                            keyboardType='numeric'
+                                            style={{ marginBottom: 8 }}
+                                        />
+                                    </List.Accordion>
+                                    <Button
+                                        mode='contained'
+                                        onPress={() =>
+                                            handleAddSet(exercise.name)
+                                        }
+                                    >
+                                        Add Set
+                                    </Button>
+                                </View>
+                            </List.Accordion>
+                        </Swipeable>
                     ))}
                 </View>
             </ScrollView>

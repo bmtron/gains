@@ -1,24 +1,29 @@
-import { useEffect, useState } from "react";
+import { useState, useCallback } from "react";
 import { ScrollView, View } from "react-native";
 import { Text, Searchbar } from "react-native-paper";
 import getAllExercises from "@/data/functions/getAllExercises";
 import { Exercise } from "@/models/exerciseModels";
 import { useAppTheme } from "@/app/_layout";
 import CustomAppBar from "../global/CustomAppBar";
+import { useFocusEffect } from "@react-navigation/native";
 
 export const ExerciseViewerView = () => {
     const theme = useAppTheme();
     const [exercises, setExercises] = useState<Exercise[]>([]);
     const [reducedExercises, setReducedExercises] = useState<Exercise[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
-    useEffect(() => {
-        const fetchExercises = async () => {
-            const exerciseList = await getAllExercises();
-            setExercises(exerciseList);
-            setReducedExercises(exerciseList);
-        };
-        fetchExercises();
-    }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            const fetchExercises = async () => {
+                const exerciseList = await getAllExercises();
+                setExercises(exerciseList);
+                setReducedExercises(exerciseList);
+            };
+            fetchExercises();
+        }, [])
+    );
+
     return (
         <View
             style={{
