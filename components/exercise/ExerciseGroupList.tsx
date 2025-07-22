@@ -3,25 +3,31 @@ import {
     View,
     ScrollView,
     TouchableOpacity,
-    Platform,
     KeyboardAvoidingView,
 } from "react-native";
-import { TextInput, Button, List, Menu } from "react-native-paper";
+import { Button, List, Menu } from "react-native-paper";
 import { useAppTheme } from "@/app/_layout";
-import getAllItems from "@/data/functions/getAllItems";
-import { Exercise, ExerciseLocal } from "@/models/exerciseModels";
+import { ExerciseLocal } from "@/models/exerciseModels";
 import CustomDropdown from "../global/CustomDropdown";
 import { WeightUnit } from "@/models/weightUnit";
 import { ExerciseGroup } from "@/models/exerciseGroup";
-import { ExerciseSetDto } from "@/models/exerciseSetDto";
 import NotificationModal from "../common/NotificationModal";
-import { DB_NAME } from "@/constants/databaseconstants";
 import HistoricalExerciseSet from "@/models/historicalExerciseSet";
 import ExerciseHistory from "./ExerciseHistory";
-import { databaseOperations } from "@/data/localstorage/databaseOperations";
 import { useFocusEffect } from "expo-router";
-import { update } from "lodash";
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
+import { AddSetCard } from "./AddSetCard";
+import { ActiveSetDisplayCard } from "./ActiveSetDisplayCard";
+import {
+    AddExerciseGroupProps,
+    handleAddExerciseGroup,
+    handleRemoveExercise,
+    handleRemoveExerciseSet,
+    loadExercises,
+    loadHistoricalWorkouts,
+    loadWeightUnitsFromLocal,
+    RemoveExerciseProps,
+} from "./ExerciseHelpers";
 
 interface ExerciseGroupListProps {
     onGroupsChange?: (groups: ExerciseGroup[]) => void;
@@ -35,7 +41,6 @@ const ExerciseGroupList = ({
 
     const [exerciseGroups, setExerciseGroups] = useState<ExerciseGroup[]>([]);
     const [exercises, setExercises] = useState<ExerciseLocal[]>([]);
-    const [loading, setLoading] = useState(true);
     const [selectedExercise, setSelectedExercise] =
         useState<ExerciseLocal | null>(null);
     const [weight, setWeight] = useState("");
@@ -49,7 +54,6 @@ const ExerciseGroupList = ({
     >([]);
     const [showHistory, setShowHistory] = useState<boolean>(false);
 
-    const [exercisesLoaded, setExercisesLoaded] = useState(false);
     const [groupsLoaded, setGroupsLoaded] = useState(false);
     const [weightUnitsLoaded, setWeightUnitsLoaded] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
@@ -59,8 +63,7 @@ const ExerciseGroupList = ({
         useCallback(() => {
             const loadInitialData = async () => {
                 try {
-                    await loadExercises();
-                    setExercisesLoaded(true);
+                    await loadExercises(setExercises);
                 } catch (error) {
                     console.error("Error loading exercises:", error);
                 }
@@ -69,28 +72,11 @@ const ExerciseGroupList = ({
         }, [])
     );
 
-    // Second useEffect - Load groups after exercises
-    useEffect(() => {
-        if (!exercisesLoaded) return;
-
-        const loadGroupData = async () => {
-            try {
-                await loadGroups();
-                setGroupsLoaded(true);
-            } catch (error) {
-                console.error("Error loading groups:", error);
-            }
-        };
-        loadGroupData();
-    }, [exercisesLoaded]);
-
     // Third useEffect - Load weight units after groups
     useEffect(() => {
-        if (!groupsLoaded) return;
-
         const loadWeightData = async () => {
             try {
-                await loadWeightUnitsFromLocal();
+                await loadWeightUnitsFromLocal(setWeightUnits);
                 setWeightUnitsLoaded(true);
             } catch (error) {
                 console.error("Error loading weight units:", error);
@@ -105,8 +91,7 @@ const ExerciseGroupList = ({
 
         const loadHistoryData = async () => {
             try {
-                await loadHistoricalWorkouts();
-                setLoading(false);
+                await loadHistoricalWorkouts(weightUnits, setHistoricalSets);
                 await clearOldDataTask();
             } catch (error) {
                 console.error("Error loading history:", error);
@@ -123,250 +108,6 @@ const ExerciseGroupList = ({
         }
     };
 
-    const loadGroups = async () => {
-        try {
-            /*
-            const stored = await AsyncStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                setExerciseGroups(JSON.parse(stored));
-            }*/
-            // SQLITE IMPLEMENTATION?
-        } catch (error) {
-            console.error("Error loading groups:", error);
-        }
-    };
-
-    const saveExerciseGroups = async (updatedGroups: ExerciseGroup[]) => {
-        try {
-            /*await AsyncStorage.setItem(
-                STORAGE_KEY,
-                JSON.stringify(updatedGroups)
-            ); */
-            //SQLITE IMPLEMENTATION?
-        } catch (error) {
-            console.error("Error saving groups:", error);
-        }
-    };
-
-    const loadHistoricalWorkouts = async () => {
-        try {
-            const data = await getAllItems<ExerciseSetDto[]>(
-                "/exerciseset/dto"
-            );
-            setHistoricalSets(mapSetsToHistoricalSets(data));
-        } catch (error) {
-            console.error("Error loading exercise sets:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-    const mapSetsToHistoricalSets = (
-        data: ExerciseSetDto[]
-    ): HistoricalExerciseSet[] => {
-        const result = data.map((set) => {
-            const weightUnit = weightUnits.find(
-                (w) => w.weightunitlookupid === set.weightunitlookupid
-            );
-            const temp: HistoricalExerciseSet = {
-                workoutid: set.workoutid,
-                exerciseId: set.exerciseserverid,
-                date: set.dateadded,
-                weight: set.weight,
-                weightUnit: weightUnits.filter(
-                    (w) => w.weightunitlookupid === set.weightunitlookupid
-                )[0],
-                reps: set.repetitions,
-                rpe: set.estimatedrpe,
-            };
-
-            return temp;
-        });
-        return result;
-    };
-    const loadExercises = async () => {
-        if (Platform.OS === "web") {
-            try {
-                const data = await getAllItems<Exercise[]>("/exercise");
-                const localMap: ExerciseLocal[] = data.map((e) => {
-                    return {
-                        exerciseLocalId: e.exerciseid, // this could potentially cause problems...that I'm too tired to think of right now
-                        exerciseid: e.exerciseid,
-                        musclegroupid: e.musclegroupid,
-                        exercisename: e.exercisename,
-                        notes: e.notes,
-                        dateadded: e.dateadded,
-                        dateupdated: null,
-                    };
-                });
-                setExercises(localMap);
-            } catch (error) {
-                console.error("Error loading exercises:", error);
-            } finally {
-                setLoading(false); // do i even use this?
-            }
-        } else {
-            try {
-                const data = await getAllExercisesFromLocal();
-                setExercises(data);
-            } catch (error) {
-                console.error("Error loading exersises from local:", error);
-            } finally {
-                setLoading(false); // do i even use this?
-            }
-        }
-    };
-
-    const getAllExercisesFromLocal = async (): Promise<ExerciseLocal[]> => {
-        const SQLite = await import("expo-sqlite");
-        const db = await SQLite.openDatabaseAsync(DB_NAME);
-
-        const data: any[] = await db.getAllAsync(`SELECT * FROM exercise;`);
-
-        return data.map((exercise) => ({
-            exerciseLocalId: exercise.exercise_local_id,
-            exerciseid: exercise.exercise_server_id,
-            musclegroupid: exercise.muscle_group_id,
-            exercisename: exercise.exercise_name,
-            notes: exercise.notes,
-            dateadded: exercise.date_added,
-            dateupdated: null,
-        }));
-    };
-
-    const loadWeightUnitsFromLocal = async () => {
-        try {
-            const data = await databaseOperations.getAllWeightUnitLookups();
-            setWeightUnits(data);
-        } catch (error) {
-            console.log("Error setting weight units: " + error);
-        }
-    };
-
-    const handleAddExerciseGroupNoButton = async (exerciseLocalId: number) => {
-        const selectedExerciseData = exercises.find(
-            (ex) => ex.exerciseLocalId === exerciseLocalId
-        );
-        if (!selectedExerciseData) return;
-        if (
-            exerciseGroups.find(
-                (exercise) =>
-                    exercise.exerciselocalid ===
-                    selectedExerciseData.exerciseLocalId
-            ) !== undefined
-        ) {
-            const existingExerciseGroup = exerciseGroups.find(
-                (exercise) =>
-                    exercise.exerciselocalid ===
-                    selectedExerciseData.exerciseLocalId
-            );
-            if (existingExerciseGroup !== undefined) {
-                setExpandedGroup(existingExerciseGroup.name);
-            }
-
-            return;
-        }
-        const defaultWeightUnit = weightUnits.find(
-            (w) => w.weightunitname === "pounds"
-        );
-
-        const updatedExerciseGroups = [
-            ...exerciseGroups,
-            {
-                exerciseid: selectedExerciseData.exerciseid,
-                exerciselocalid: selectedExerciseData.exerciseLocalId,
-                name: selectedExerciseData.exercisename,
-                sets: [],
-                weightUnit: defaultWeightUnit,
-            },
-        ];
-
-        if (onGroupsChange) {
-            onGroupsChange(updatedExerciseGroups);
-        }
-        setExerciseGroups(updatedExerciseGroups);
-        await saveExerciseGroups(updatedExerciseGroups);
-        setSelectedExercise(null);
-    };
-
-    const handleRemoveSet = async (index: number, group: ExerciseGroup) => {
-        const updatedExerciseGroups = exerciseGroups.map((g) =>
-            g.name === group.name
-                ? { ...g, sets: g.sets.filter((_, i) => i !== index) }
-                : g
-        );
-        if (onGroupsChange) {
-            onGroupsChange(updatedExerciseGroups);
-        }
-        setExerciseGroups(updatedExerciseGroups);
-        await saveExerciseGroups(updatedExerciseGroups);
-    };
-
-    const handleRemoveExercise = async (group: ExerciseGroup) => {
-        const updatedExerciseGroups = exerciseGroups.filter(
-            (g) => g.name !== group.name
-        );
-
-        console.log(updatedExerciseGroups);
-
-        if (onGroupsChange) {
-            onGroupsChange(updatedExerciseGroups);
-        }
-        setExerciseGroups(updatedExerciseGroups);
-        await saveExerciseGroups(updatedExerciseGroups);
-    };
-
-    const handleAddSet = async (groupName: string) => {
-        const group = exerciseGroups.find((g) => g.name === groupName);
-        if (group === undefined) return;
-        if (!group.weightUnit) {
-            setModalVisible(true);
-            setModalMessage(
-                "You have not selected a weight unit. Please make a valid selection."
-            );
-            return;
-        }
-        if (!weight) {
-            setModalVisible(true);
-            setModalMessage("You must select a value for weight to continue.");
-            return;
-        }
-        if (!reps) {
-            setModalVisible(true);
-            setModalMessage("You must select a value for reps to continue");
-            return;
-        }
-        const newSet: ExerciseSetDto = {
-            exerciselocalid: group?.exerciselocalid,
-            exerciseserverid: group?.exerciseid,
-            weight: parseFloat(weight),
-            repetitions: parseInt(reps),
-            estimatedrpe: rpe ? parseFloat(rpe) : 0,
-            weightunitlookupid:
-                group.weightUnit !== undefined
-                    ? group.weightUnit.weightunitlookupid
-                    : 0,
-        };
-
-        const updatedGroups = exerciseGroups.map((group) =>
-            group.name === groupName
-                ? {
-                      ...group,
-                      sets: [...group.sets, newSet],
-                  }
-                : group
-        );
-
-        setExerciseGroups(updatedGroups);
-
-        await saveExerciseGroups(updatedGroups);
-
-        if (onGroupsChange) {
-            onGroupsChange(updatedGroups);
-        }
-        setWeight("");
-        setReps("");
-        setRpe("");
-    };
     return (
         <KeyboardAvoidingView
             style={{ flex: 1, backgroundColor: theme.colors.background }}
@@ -383,9 +124,18 @@ const ExerciseGroupList = ({
                     <CustomDropdown
                         options={exercises}
                         onSelect={async (exercise) => {
-                            await handleAddExerciseGroupNoButton(
-                                exercise.exerciseLocalId
-                            );
+                            const addExerciseGroupProps: AddExerciseGroupProps =
+                                {
+                                    exerciseLocalId: exercise.exerciseLocalId,
+                                    exercises: exercises,
+                                    exerciseGroups: exerciseGroups,
+                                    setExpandedGroup: setExpandedGroup,
+                                    weightUnits: weightUnits,
+                                    onGroupsChange: onGroupsChange,
+                                    setExerciseGroups: setExerciseGroups,
+                                    setSelectedExercise: setSelectedExercise,
+                                };
+                            await handleAddExerciseGroup(addExerciseGroupProps);
                             setExpandedGroup(exercise.exercisename);
                         }}
                         selectedOption={selectedExercise}
@@ -408,7 +158,19 @@ const ExerciseGroupList = ({
                                         onPress={(e) => {
                                             console.log("onPress");
                                             e.stopPropagation();
-                                            handleRemoveExercise(exercise);
+                                            const removeExerciseProps: RemoveExerciseProps =
+                                                {
+                                                    group: exercise,
+                                                    exerciseGroups:
+                                                        exerciseGroups,
+                                                    setExerciseGroups:
+                                                        setExerciseGroups,
+                                                    onGroupsChange:
+                                                        onGroupsChange,
+                                                };
+                                            handleRemoveExercise(
+                                                removeExerciseProps
+                                            );
                                         }}
                                     >
                                         <List.Icon icon='delete' />
@@ -417,7 +179,7 @@ const ExerciseGroupList = ({
                             }
                         >
                             <List.Accordion
-                                key={exercise.name}
+                                key={index}
                                 title={`${exercise.name} ${
                                     exercise.weightUnit
                                         ? `(${exercise.weightUnit.weightunitlabel})`
@@ -487,76 +249,29 @@ const ExerciseGroupList = ({
                                 </Menu>
 
                                 {exercise.sets.map((set, index) => (
-                                    <List.Item
-                                        key={index}
-                                        title={`Set ${index + 1}`}
-                                        description={`Weight: ${set.weight}${
-                                            exercise.weightUnit
-                                                ?.weightunitlabel || ""
-                                        }, Reps: ${set.repetitions}${
-                                            set.estimatedrpe
-                                                ? `, RPE: ${set.estimatedrpe}`
-                                                : ""
-                                        }`}
-                                        right={(props) => (
-                                            <TouchableOpacity
-                                                onPress={() =>
-                                                    handleRemoveSet(
-                                                        index,
-                                                        exercise
-                                                    )
-                                                }
-                                            >
-                                                <List.Icon
-                                                    {...props}
-                                                    icon='delete'
-                                                />
-                                            </TouchableOpacity>
-                                        )}
+                                    <ActiveSetDisplayCard
+                                        exerciseGroup={exercise}
+                                        set={set}
+                                        index={index}
+                                        removeSetHandler={
+                                            handleRemoveExerciseSet
+                                        }
                                     />
                                 ))}
-
-                                <View style={{ padding: 8 }}>
-                                    <List.Accordion title='New Set...'>
-                                        <TextInput
-                                            placeholder={
-                                                "Weight (" +
-                                                exercise.weightUnit
-                                                    ?.weightunitlabel +
-                                                ")"
-                                            }
-                                            value={weight}
-                                            keyboardType='numeric'
-                                            textContentType='none'
-                                            onChangeText={(text) =>
-                                                setWeight(text)
-                                            }
-                                            style={{ marginBottom: 8 }}
-                                        />
-                                        <TextInput
-                                            label='Repetitions'
-                                            value={reps}
-                                            onChangeText={setReps}
-                                            keyboardType='numeric'
-                                            style={{ marginBottom: 8 }}
-                                        />
-                                        <TextInput
-                                            label='RPE (optional)'
-                                            value={rpe}
-                                            onChangeText={setRpe}
-                                            keyboardType='numeric'
-                                            style={{ marginBottom: 8 }}
-                                        />
-                                    </List.Accordion>
-                                    <Button
-                                        mode='contained'
-                                        onPress={() =>
-                                            handleAddSet(exercise.name)
-                                        }
-                                    >
-                                        Add Set
-                                    </Button>
-                                </View>
+                                <AddSetCard
+                                    exercise={exercise}
+                                    weight={weight}
+                                    setWeight={setWeight}
+                                    reps={reps}
+                                    setReps={setReps}
+                                    rpe={rpe}
+                                    setRpe={setRpe}
+                                    exerciseGroups={exerciseGroups}
+                                    setExerciseGroups={setExerciseGroups}
+                                    modalVisibilityHandler={setModalVisible}
+                                    modalMessageHandler={setModalMessage}
+                                    onGroupsChange={onGroupsChange}
+                                />
                             </List.Accordion>
                         </Swipeable>
                     ))}
