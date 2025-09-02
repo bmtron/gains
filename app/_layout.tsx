@@ -1,7 +1,7 @@
 import { Stack } from "expo-router";
 import { PaperProvider, MD3DarkTheme } from "react-native-paper";
 import { Provider } from "react-redux";
-import { store } from "../state_store/store";
+import { store } from "../state/store";
 import colorScheme from "@/constants/colorscheme";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";

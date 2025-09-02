@@ -15,14 +15,26 @@ import { DB_NAME } from "@/constants/databaseconstants";
 import FailureBanner from "@/components/common/FailureBanner";
 import { ExerciseSetDto } from "@/models/exerciseSetDto";
 import { setExerciseDataServerId } from "@/data/functions/setExerciseDataServerId";
+import getAllItems from "@/data/functions/getAllItems";
+import MuscleGroup from "@/models/muscleGroupModels";
+import { useAppDispatch } from "@/state/hooks";
+import { loadMuscleGroups } from "@/state/muscleGroupReducer";
 
 export default function Index() {
     const theme = useAppTheme();
     const [failedData, setFailedData] = useState<WorkoutDto>();
     const [modalMessage, setModalMessage] = useState("");
     const [isModalVisible, setIsModalVisible] = useState(false);
+    const dispatch = useAppDispatch();
+
     useFocusEffect(
         useCallback(() => {
+            (async () => {
+                const muscleGroups = await getAllItems<MuscleGroup[]>(
+                    "/musclegroup"
+                );
+                dispatch(loadMuscleGroups(muscleGroups));
+            })();
             const checkForFailedData = async () => {
                 const failed = await databaseOperations.getUnsyncedWorkouts();
                 if (failed !== null && failed.length > 0) {
@@ -38,6 +50,7 @@ export default function Index() {
         // we can do this here, for now
         // perhaps need to move this to its own file/section,
         // and possibly manual triggers for this as well
+
         const syncInExercises = async () => {
             await databaseOperations.syncInExercises();
         };
